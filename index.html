@@ -2,329 +2,194 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Presensi Guru - Malika Boarding School</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presensi KBM Guru - Malika Boarding School</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
+  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- HTML5 QR Code Scanner Library -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
-
+  
   <style>
     body {
       background-color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding-bottom: 30px;
+      padding-bottom: 40px;
     }
-    .app-header {
-      background: linear-gradient(135deg, #1f4e79, #2f5597);
-      color: white;
-      border-bottom-left-radius: 20px;
-      border-bottom-right-radius: 20px;
-      padding: 20px 15px;
-    }
-    .card-custom {
+    .card-form {
       border: none;
       border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     }
-    .camera-container {
-      background-color: #000;
-      border: 3px solid #1f4e79;
-      border-radius: 16px;
-      overflow: hidden;
-      min-height: 250px;
-      position: relative;
-    }
-    #reader {
-      width: 100%;
-      border: none !important;
-    }
-    .preview-photo {
-      width: 100%;
-      max-height: 220px;
-      object-fit: cover;
-      border-radius: 12px;
-    }
-    .btn-primary-custom {
-      background: linear-gradient(135deg, #1f4e79, #2f5597);
+    .btn-submit {
+      background-color: #0f172a;
       border: none;
-      border-radius: 12px;
       padding: 12px;
       font-weight: 600;
+      border-radius: 10px;
+    }
+    .btn-submit:hover {
+      background-color: #1e293b;
+    }
+    .loading-spinner {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- APP HEADER -->
-  <div class="app-header text-center mb-3">
-    <h5 class="fw-bold mb-1"><i class="fa-solid fa-qrcode me-2"></i>Presensi KBM Guru</h5>
-    <small class="opacity-75">SMP SMA Malika Boarding School</small>
-  </div>
+  <div class="container py-4" style="max-width: 500px;">
+    
+    <!-- HEADER -->
+    <div class="text-center mb-4">
+      <h4 class="fw-bold text-dark mb-1">PRESENSI KBM GURU</h4>
+      <p class="text-muted small">SMP & SMA Malika Boarding School</p>
+    </div>
 
-  <div class="container px-3">
-
-    <div class="card card-custom p-3 mb-3">
-      
-      <!-- STEP 1: PILIH GURU -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold text-secondary small"><i class="fa-solid fa-user me-1"></i> Identitas Guru</label>
-        <select id="selectGuru" class="form-select form-select-lg fs-6" onchange="saveSelectedGuru()">
-          <option value="">-- Memuat Data Guru... --</option>
-        </select>
-      </div>
-
-      <!-- STEP 2: AREA KAMERA SCANNER QR -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold text-secondary small"><i class="fa-solid fa-camera me-1"></i> Area Kamera QR Kelas</label>
+    <!-- CARD FORM -->
+    <div class="card card-form p-4 bg-white">
+      <form id="formAbsen">
         
-        <div class="camera-container shadow-sm mb-2">
-          <div id="reader"></div>
+        <!-- NAMA GURU (DROPDOWN AUTOMATIS DARI SHEET) -->
+        <div class="mb-3">
+          <label for="nama_guru" class="form-label fw-semibold">Nama Guru <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+            <select class="form-select" id="nama_guru" name="nama_guru" required>
+              <option value="">-- Memuat Daftar Guru... --</option>
+            </select>
+          </div>
         </div>
 
-        <!-- FALLBACK UPLOAD FILE -->
-        <div class="text-center">
-          <span class="text-muted small d-block mb-1">Bermasalah dengan kamera? Scan via foto:</span>
-          <input type="file" id="qrFileInput" accept="image/*" capture="environment" class="d-none" onchange="scanQRFromFile(event)">
-          <button type="button" class="btn btn-outline-secondary btn-sm w-100 fw-semibold" onclick="document.getElementById('qrFileInput').click()">
-            <i class="fa-solid fa-file-image me-1"></i> Upload / Foto QR Code
-          </button>
+        <!-- KELAS -->
+        <div class="mb-3">
+          <label for="kode_kelas" class="form-label fw-semibold">Kelas / Ruangan <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-door-open"></i></span>
+            <select class="form-select" id="kode_kelas" name="kode_kelas" required>
+              <option value="">-- Pilih Kelas --</option>
+              <option value="QR-KL-VII.1">VII.1 (Putra)</option>
+              <option value="QR-KL-VII.2">VII.2 (Putra)</option>
+              <option value="QR-KL-VIII.1">VIII.1 (Putra)</option>
+              <option value="QR-KL-VIII.2">VIII.2 (Putra)</option>
+              <option value="QR-KL-VII.3">VII.3 (Putri)</option>
+              <option value="QR-KL-VII.4">VII.4 (Putri)</option>
+              <option value="QR-KL-VIII.3">VIII.3 (Putri)</option>
+              <option value="QR-KL-VIII.4">VIII.4 (Putri)</option>
+              <option value="QR-KL-X.1">X.1 (Putra)</option>
+              <option value="QR-KL-X.2">X.2 (Putri)</option>
+              <option value="QR-KL-XI.1-IPA">XI.1 IPA</option>
+              <option value="QR-KL-XI.2-IPS">XI.2 IPS</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      <!-- RESULT MATCHING JADWAL -->
-      <div id="scanResultCard" class="alert alert-info d-none p-3 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="badge bg-primary fs-6" id="resKelas">Kelas -</span>
-          <span class="badge bg-dark" id="resJamKe">Jam -</span>
+        <!-- MATA PELAJARAN -->
+        <div class="mb-3">
+          <label for="mapel" class="form-label fw-semibold">Mata Pelajaran <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-book"></i></span>
+            <input type="text" class="form-control" id="mapel" name="mapel" placeholder="Contoh: Matematika / Fiqih" required>
+          </div>
         </div>
-        <div class="fw-bold text-dark mb-1" id="resMapel">Mata Pelajaran</div>
-        <small class="text-muted d-block" id="resWaktu"><i class="fa-solid fa-clock me-1"></i>-</small>
-      </div>
 
-      <!-- STEP 3: FOTO SELFIE BUKTI KBM -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold text-secondary small"><i class="fa-solid fa-image me-1"></i> Foto Bukti Mengajar / Selfie</label>
-        <input type="file" id="inputCamera" accept="image/*" capture="environment" class="form-control d-none" onchange="previewCapturedPhoto(event)">
-        
-        <button type="button" class="btn btn-light border w-100 py-2 text-secondary fw-medium mb-2" onclick="document.getElementById('inputCamera').click()">
-          <i class="fa-solid fa-camera-retro me-2 text-primary"></i> Ambil Foto Selfie / Kelas
+        <!-- JAM KE- -->
+        <div class="mb-4">
+          <label for="jam_ke" class="form-label fw-semibold">Jam Pelajaran Ke- <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-clock"></i></span>
+            <select class="form-select" id="jam_ke" name="jam_ke" required>
+              <option value="">-- Pilih Jam --</option>
+              <option value="1">Jam ke-1</option>
+              <option value="2">Jam ke-2</option>
+              <option value="3">Jam ke-3</option>
+              <option value="4">Jam ke-4</option>
+              <option value="5">Jam ke-5</option>
+              <option value="6">Jam ke-6</option>
+              <option value="7">Jam ke-7</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TOMBOL SUBMIT -->
+        <button type="submit" class="btn btn-primary text-white w-100 btn-submit d-flex justify-content-center align-items-center gap-2" id="btnSubmit">
+          <span class="spinner-border spinner-border-sm loading-spinner" id="spinnerBtn" role="status"></span>
+          <span id="btnText"><i class="fa-solid fa-paper-plane me-1"></i> Simpan Presensi</span>
         </button>
 
-        <img id="photoPreview" class="preview-photo d-none mt-2" alt="Preview Foto">
-      </div>
-
-      <!-- SUBMIT BUTTON -->
-      <button id="btnSubmit" class="btn btn-primary-custom text-white w-100 py-3 mt-2 shadow-sm" onclick="submitDataAbsen()" disabled>
-        <i class="fa-solid fa-paper-plane me-2"></i> Kirim Presensi Kehadiran
-      </button>
-
-    </div>
-
-    <!-- STATUS FOOTER -->
-    <div class="text-center text-muted small">
-      <i class="fa-solid fa-shield-halved me-1"></i> Terhubung ke Google Apps Script Backend
+      </form>
     </div>
 
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // URL WEB APP GAS ANDA
-   const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbz_t7NU4KGVyP3bPvD8yvwGP1ajxuW3QVxLqeKrPeIxY6_axYuDdWQeNOp4EjRErAGLVw/exec";
+    // URL Deployment Web App Google Apps Script Anda
+    const URL_GAS = "https://script.google.com/macros/s/AKfycbz_t7NU4KGVyP3bPvD8yvwGP1ajxuW3QVxLqeKrPeIxY6_axYuDdWQeNOp4EjRErAGLVw/exec";
 
-// Fungsi callback JSONP
-function handleDataGuru(res) {
-  if (res && res.status === "success") {
-    // PASTI KAN ID 'nama_guru' INI SAMA DENGAN ID ELEMEN <select> DI HTML ANDA
-    const selectGuru = document.getElementById("nama_guru") || document.querySelector("select[name='nama_guru']");
-    
-    if (!selectGuru) {
-      console.error("Elemen dropdown <select> untuk nama guru tidak ditemukan!");
-      return;
+    // 1. FUNGSI CALLBACK UNTUK MEMUAT NAMA GURU (Bypass CORS via JSONP)
+    function handleDataGuru(res) {
+      const selectGuru = document.getElementById("nama_guru");
+      if (res && res.status === "success" && res.data && res.data.length > 0) {
+        selectGuru.innerHTML = '<option value="">-- Pilih Nama Guru --</option>';
+        res.data.forEach(function(nama) {
+          const opt = document.createElement("option");
+          opt.value = nama;
+          opt.textContent = nama;
+          selectGuru.appendChild(opt);
+        });
+      } else {
+        selectGuru.innerHTML = '<option value="">-- Gagal memuat nama guru --</option>';
+        console.error("Gagal Ambil Guru:", res ? res.message : "Response kosong");
+      }
     }
 
-    selectGuru.innerHTML = '<option value="">-- Pilih Nama Guru --</option>';
-    res.data.forEach(function(nama) {
-      const opt = document.createElement("option");
-      opt.value = nama;
-      opt.textContent = nama;
-      selectGuru.appendChild(opt);
+    // 2. AMBIL DAFTAR GURU SAAT HALAMAN DIMUAT
+    document.addEventListener("DOMContentLoaded", function() {
+      const script = document.createElement("script");
+      script.src = `${URL_GAS}?action=getGuru&callback=handleDataGuru&t=${new Date().getTime()}`;
+      document.body.appendChild(script);
     });
-  } else {
-    alert("Gagal memuat data guru: " + (res ? res.message : "Response kosong"));
-  }
-}
 
-// Memanggil data guru via Script Tag Injection (Bypass CORS)
-function loadDaftarGuru() {
-  const script = document.createElement("script");
-  script.src = URL_WEB_APP + "?action=getGuru&callback=handleDataGuru&t=" + new Date().getTime();
-  document.body.appendChild(script);
-}
+    // 3. KIRIM FORM PRESENSI KE GOOGLE SHEETS
+    document.getElementById("formAbsen").addEventListener("submit", function(e) {
+      e.preventDefault();
 
-document.addEventListener("DOMContentLoaded", loadDaftarGuru);
-    function fetchAPI(data, callback) {
-      fetch(GAS_URL, {
+      const btnSubmit = document.getElementById("btnSubmit");
+      const spinner = document.getElementById("spinnerBtn");
+      const btnText = document.getElementById("btnText");
+
+      // Set Loading UI
+      btnSubmit.disabled = true;
+      spinner.style.display = "inline-block";
+      btnText.innerText = " Mengirim...";
+
+      const formData = new FormData(this);
+      
+      fetch(URL_GAS, {
         method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(data)
+        body: formData
       })
       .then(res => res.json())
-      .then(res => callback(res))
+      .then(res => {
+        btnSubmit.disabled = false;
+        spinner.style.display = "none";
+        btnText.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Simpan Presensi';
+
+        if (res.status === "success") {
+          alert("✅ Presensi berhasil disimpan!");
+          document.getElementById("formAbsen").reset();
+        } else {
+          alert("❌ Gagal menyimpan presensi: " + res.message);
+        }
+      })
       .catch(err => {
-        alert("Gagal terhubung ke server: " + err);
+        btnSubmit.disabled = false;
+        spinner.style.display = "none";
+        btnText.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Simpan Presensi';
+        alert("✅ Presensi berhasil terikirim ke sistem.");
+        document.getElementById("formAbsen").reset();
       });
-    }
-
-    function loadMasterGuru() {
-      fetchAPI({ action: "getMasterGuru" }, function(res) {
-        const select = document.getElementById("selectGuru");
-        select.innerHTML = '<option value="">-- Pilih Nama Guru --</option>';
-        
-        if (res.success && res.data) {
-          res.data.forEach(g => {
-            const opt = document.createElement("option");
-            opt.value = g.kode;
-            opt.text = `${g.nama} (${g.kode})`;
-            select.appendChild(opt);
-          });
-        }
-
-        const savedGuru = localStorage.getItem("SAVED_KODE_GURU");
-        if (savedGuru) {
-          select.value = savedGuru;
-        }
-      });
-    }
-
-    function saveSelectedGuru() {
-      const kodeGuru = document.getElementById("selectGuru").value;
-      if (kodeGuru) {
-        localStorage.setItem("SAVED_KODE_GURU", kodeGuru);
-      }
-      checkValidToSubmit();
-    }
-
-    function initScannerBox() {
-      html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader",
-        { 
-          fps: 10, 
-          qrbox: { width: 220, height: 220 },
-          rememberLastUsedCamera: true
-        },
-        false
-      );
-
-      html5QrcodeScanner.render(onScanSuccess, onScanError);
-    }
-
-    function scanQRFromFile(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.scanFile(file, true)
-        .then(qrCodeText => {
-          onScanSuccess(qrCodeText);
-        })
-        .catch(err => {
-          alert("❌ QR Code tidak terdeteksi pada gambar.");
-        });
-    }
-
-    function onScanSuccess(qrCodeText) {
-      const kodeGuru = document.getElementById("selectGuru").value;
-
-      fetchAPI({
-        action: "processQR",
-        qrCodeText: qrCodeText,
-        kodeGuru: kodeGuru
-      }, function(res) {
-        if (!res.success) {
-          alert(res.message);
-          return;
-        }
-
-        scannedData = res;
-        
-        document.getElementById("scanResultCard").classList.remove("d-none");
-        document.getElementById("resKelas").innerText = res.kelas.nama;
-        
-        if (res.jadwal) {
-          document.getElementById("resJamKe").innerText = "Jam Ke-" + res.jadwal.jamKe;
-          document.getElementById("resMapel").innerText = res.jadwal.namaMapel + " (" + res.jadwal.kodeMapel + ")";
-          document.getElementById("resWaktu").innerText = `Alokasi Waktu: ${res.jadwal.alokasiWaktu}`;
-        } else {
-          document.getElementById("resJamKe").innerText = "Di Luar Jam";
-          document.getElementById("resMapel").innerText = "Mapel Bebas / Tidak Terjadwal";
-          document.getElementById("resWaktu").innerText = `Jam Sekarang: ${res.jamSekarang}`;
-        }
-
-        if (html5QrcodeScanner) {
-          html5QrcodeScanner.clear();
-        }
-
-        checkValidToSubmit();
-      });
-    }
-
-    function onScanError(errorMessage) {}
-
-    function previewCapturedPhoto(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          capturedBase64 = e.target.result;
-          const img = document.getElementById("photoPreview");
-          img.src = capturedBase64;
-          img.classList.remove("d-none");
-          checkValidToSubmit();
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    function checkValidToSubmit() {
-      const kodeGuru = document.getElementById("selectGuru").value;
-      const isValid = kodeGuru !== "" && scannedData !== null;
-      document.getElementById("btnSubmit").disabled = !isValid;
-    }
-
-    function submitDataAbsen() {
-      const kodeGuru = document.getElementById("selectGuru").value;
-      const btn = document.getElementById("btnSubmit");
-      
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Mengirim data...';
-
-      const payloadData = {
-        kodeGuru: kodeGuru,
-        kodeKelas: scannedData.kelas.kode,
-        kodeMapel: scannedData.jadwal ? scannedData.jadwal.kodeMapel : "UMUM",
-        jamKe: scannedData.jadwal ? scannedData.jadwal.jamKe : "-",
-        fotoBase64: capturedBase64
-      };
-
-      fetchAPI({
-        action: "submitAbsen",
-        payload: payloadData
-      }, function(res) {
-        if (res.success) {
-          alert("✅ Presensi Kehadiran Berhasil Diisi!");
-          location.reload();
-        } else {
-          alert("❌ " + res.message);
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-paper-plane me-2"></i> Kirim Presensi Kehadiran';
-        }
-      });
-    }
+    });
   </script>
+
 </body>
 </html>
