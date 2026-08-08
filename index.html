@@ -1,195 +1,181 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Presensi KBM Guru - Malika Boarding School</title>
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    body {
-      background-color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding-bottom: 40px;
-    }
-    .card-form {
-      border: none;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    }
-    .btn-submit {
-      background-color: #0f172a;
-      border: none;
-      padding: 12px;
-      font-weight: 600;
-      border-radius: 10px;
-    }
-    .btn-submit:hover {
-      background-color: #1e293b;
-    }
-    .loading-spinner {
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Absen Guru Malika IBS</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        input, button, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        #reader { width: 100%; margin-top: 20px; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
 
-  <div class="container py-4" style="max-width: 500px;">
+    <h2>Absen Guru Malika IBS</h2>
     
-    <!-- HEADER -->
-    <div class="text-center mb-4">
-      <h4 class="fw-bold text-dark mb-1">PRESENSI KBM GURU</h4>
-      <p class="text-muted small">SMP & SMA Malika Boarding School</p>
-    </div>
+    <label>Nama Guru (Ketik untuk mencari):</label>
+    <input list="list-guru" id="namaGuru" placeholder="Contoh: Ahmad...">
+    <datalist id="list-guru">
+        <option value="Memuat data guru...">
+    </datalist>
 
-    <!-- CARD FORM -->
-    <div class="card card-form p-4 bg-white">
-      <form id="formAbsen">
+    <div id="reader"></div>
+    <button id="btn-scan" onclick="startScanner()">Buka Kamera Scan QR Kelas</button>
+
+    <div id="form-hasil" class="hidden">
+        <h3>Data Kelas & Jam Pelajaran</h3>
+        <input type="text" id="hasil-kelas" readonly style="background:#eee; font-weight:bold;">
+        <input type="text" id="hasil-jam" readonly style="background:#eee; color:#3498db; font-weight:bold;">
         
-        <!-- NAMA GURU (DROPDOWN AUTOMATIS DARI SHEET) -->
-        <div class="mb-3">
-          <label for="nama_guru" class="form-label fw-semibold">Nama Guru <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
-            <select class="form-select" id="nama_guru" name="nama_guru" required>
-              <option value="">-- Memuat Daftar Guru... --</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- KELAS -->
-        <div class="mb-3">
-          <label for="kode_kelas" class="form-label fw-semibold">Kelas / Ruangan <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-solid fa-door-open"></i></span>
-            <select class="form-select" id="kode_kelas" name="kode_kelas" required>
-              <option value="">-- Pilih Kelas --</option>
-              <option value="QR-KL-VII.1">VII.1 (Putra)</option>
-              <option value="QR-KL-VII.2">VII.2 (Putra)</option>
-              <option value="QR-KL-VIII.1">VIII.1 (Putra)</option>
-              <option value="QR-KL-VIII.2">VIII.2 (Putra)</option>
-              <option value="QR-KL-VII.3">VII.3 (Putri)</option>
-              <option value="QR-KL-VII.4">VII.4 (Putri)</option>
-              <option value="QR-KL-VIII.3">VIII.3 (Putri)</option>
-              <option value="QR-KL-VIII.4">VIII.4 (Putri)</option>
-              <option value="QR-KL-X.1">X.1 (Putra)</option>
-              <option value="QR-KL-X.2">X.2 (Putri)</option>
-              <option value="QR-KL-XI.1-IPA">XI.1 IPA</option>
-              <option value="QR-KL-XI.2-IPS">XI.2 IPS</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- MATA PELAJARAN -->
-        <div class="mb-3">
-          <label for="mapel" class="form-label fw-semibold">Mata Pelajaran <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-solid fa-book"></i></span>
-            <input type="text" class="form-control" id="mapel" name="mapel" placeholder="Contoh: Matematika / Fiqih" required>
-          </div>
-        </div>
-
-        <!-- JAM KE- -->
-        <div class="mb-4">
-          <label for="jam_ke" class="form-label fw-semibold">Jam Pelajaran Ke- <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-solid fa-clock"></i></span>
-            <select class="form-select" id="jam_ke" name="jam_ke" required>
-              <option value="">-- Pilih Jam --</option>
-              <option value="1">Jam ke-1</option>
-              <option value="2">Jam ke-2</option>
-              <option value="3">Jam ke-3</option>
-              <option value="4">Jam ke-4</option>
-              <option value="5">Jam ke-5</option>
-              <option value="6">Jam ke-6</option>
-              <option value="7">Jam ke-7</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- TOMBOL SUBMIT -->
-        <button type="submit" class="btn btn-primary text-white w-100 btn-submit d-flex justify-content-center align-items-center gap-2" id="btnSubmit">
-          <span class="spinner-border spinner-border-sm loading-spinner" id="spinnerBtn" role="status"></span>
-          <span id="btnText"><i class="fa-solid fa-paper-plane me-1"></i> Simpan Presensi</span>
-        </button>
-
-      </form>
+        <label>Ambil Foto Selfie di Kelas:</label>
+        <input type="file" id="fotoSelfie" accept="image/*" capture="user">
+        
+        <button id="btn-hadir" onclick="submitAbsen()" style="background: #2ecc71; color: white; font-weight: bold; font-size: 1.2em;">HADIR</button>
     </div>
 
-  </div>
+    <script>
+        // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby.../exec'; 
 
-  <script>
-    // URL Deployment Web App Google Apps Script Anda
-    const URL_GAS = "https://script.google.com/macros/s/AKfycbz_t7NU4KGVyP3bPvD8yvwGP1ajxuW3QVxLqeKrPeIxY6_axYuDdWQeNOp4EjRErAGLVw/exec";
+        let jadwalHariIni = [];
+        let dataScanAktif = {};
 
-    // 1. FUNGSI CALLBACK UNTUK MEMUAT NAMA GURU (Bypass CORS via JSONP)
-    function handleDataGuru(res) {
-      const selectGuru = document.getElementById("nama_guru");
-      if (res && res.status === "success" && res.data && res.data.length > 0) {
-        selectGuru.innerHTML = '<option value="">-- Pilih Nama Guru --</option>';
-        res.data.forEach(function(nama) {
-          const opt = document.createElement("option");
-          opt.value = nama;
-          opt.textContent = nama;
-          selectGuru.appendChild(opt);
-        });
-      } else {
-        selectGuru.innerHTML = '<option value="">-- Gagal memuat nama guru --</option>';
-        console.error("Gagal Ambil Guru:", res ? res.message : "Response kosong");
-      }
-    }
+        // 1. Tarik Data Guru dan Jadwal saat aplikasi dibuka
+        window.onload = async function() {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL + '?action=getInitData');
+                const data = await response.json();
+                
+                jadwalHariIni = data.jadwalHariIni;
+                
+                const datalist = document.getElementById('list-guru');
+                datalist.innerHTML = ''; 
+                data.guru.forEach(nama => {
+                    let option = document.createElement('option');
+                    option.value = nama;
+                    datalist.appendChild(option);
+                });
+            } catch (e) {
+                alert("Gagal memuat data dari server. Pastikan koneksi internet stabil.");
+            }
+        };
 
-    // 2. AMBIL DAFTAR GURU SAAT HALAMAN DIMUAT
-    document.addEventListener("DOMContentLoaded", function() {
-      const script = document.createElement("script");
-      script.src = `${URL_GAS}?action=getGuru&callback=handleDataGuru&t=${new Date().getTime()}`;
-      document.body.appendChild(script);
-    });
-
-    // 3. KIRIM FORM PRESENSI KE GOOGLE SHEETS
-    document.getElementById("formAbsen").addEventListener("submit", function(e) {
-      e.preventDefault();
-
-      const btnSubmit = document.getElementById("btnSubmit");
-      const spinner = document.getElementById("spinnerBtn");
-      const btnText = document.getElementById("btnText");
-
-      // Set Loading UI
-      btnSubmit.disabled = true;
-      spinner.style.display = "inline-block";
-      btnText.innerText = " Mengirim...";
-
-      const formData = new FormData(this);
-      
-      fetch(URL_GAS, {
-        method: "POST",
-        body: formData
-      })
-      .then(res => res.json())
-      .then(res => {
-        btnSubmit.disabled = false;
-        spinner.style.display = "none";
-        btnText.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Simpan Presensi';
-
-        if (res.status === "success") {
-          alert("✅ Presensi berhasil disimpan!");
-          document.getElementById("formAbsen").reset();
-        } else {
-          alert("❌ Gagal menyimpan presensi: " + res.message);
+        // Fungsi pembantu mengubah "07:30" menjadi format Waktu
+        function parseTime(timeStr) {
+            let now = new Date();
+            let parts = timeStr.split(':');
+            now.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+            return now;
         }
-      })
-      .catch(err => {
-        btnSubmit.disabled = false;
-        spinner.style.display = "none";
-        btnText.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Simpan Presensi';
-        alert("✅ Presensi berhasil terikirim ke sistem.");
-        document.getElementById("formAbsen").reset();
-      });
-    });
-  </script>
 
+        // 2. Mulai Kamera
+        function startScanner() {
+            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText, decodedResult) => {
+                    html5QrCode.stop();
+                    document.getElementById('reader').classList.add('hidden');
+                    document.getElementById('btn-scan').classList.add('hidden');
+                    document.getElementById('form-hasil').classList.remove('hidden');
+                    
+                    // Format QR contoh: "QR-KL-VII.1 (PUTRA)" -> kita ambil "VII.1 (PUTRA)"
+                    let namaKelas = decodedText.replace('QR-KL-', '').trim();
+                    document.getElementById('hasil-kelas').value = "Kelas: " + namaKelas;
+                    
+                    // 3. Pencocokan Jam Realtime dengan Jadwal
+                    let now = new Date();
+                    let currentJam = null;
+
+                    for (let j of jadwalHariIni) {
+                        let start = parseTime(j.mulai);
+                        let end = parseTime(j.selesai);
+                        if (now >= start && now <= end) {
+                            currentJam = j;
+                            break;
+                        }
+                    }
+
+                    if (currentJam && currentJam.jamKe !== "Istirahat/Lainnya") {
+                        let pelajaran = currentJam.pelajaran[namaKelas];
+                        if(pelajaran && pelajaran.kodeMapel && pelajaran.kodeMapel !== "") {
+                            document.getElementById('hasil-jam').value = `Jam Ke-${currentJam.jamKe} | Mapel: ${pelajaran.kodeMapel}`;
+                            
+                            // Simpan ke variabel global untuk dikirim ke database
+                            dataScanAktif = {
+                                kodeKelas: decodedText,
+                                namaKelas: namaKelas,
+                                jamKe: currentJam.jamKe,
+                                kodeMapel: pelajaran.kodeMapel,
+                                kodeGuruJadwal: pelajaran.kodeGuru // Menyimpan kode guru yang seharusnya mengajar
+                            };
+                        } else {
+                            document.getElementById('hasil-jam').value = "Jam Kosong untuk kelas ini.";
+                            document.getElementById('btn-hadir').disabled = true;
+                        }
+                    } else {
+                        document.getElementById('hasil-jam').value = "Sedang Jam Istirahat / Di luar KBM";
+                        document.getElementById('btn-hadir').disabled = true;
+                    }
+                },
+                (errorMessage) => { /* Abaikan error pembacaan frame per detik */ }
+            );
+        }
+
+        // 4. Kirim Data Absen
+        async function submitAbsen() {
+            const nama = document.getElementById('namaGuru').value;
+            const fileInput = document.getElementById('fotoSelfie');
+
+            if(!nama || fileInput.files.length === 0) {
+                alert("Mohon lengkapi nama dan foto selfie!");
+                return;
+            }
+
+            document.getElementById('btn-hadir').innerText = "MENGIRIM...";
+            document.getElementById('btn-hadir').disabled = true;
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onloadend = async function() {
+                const base64String = reader.result;
+                
+                const payload = {
+                    namaGuru: nama,
+                    kodeGuru: dataScanAktif.kodeGuruJadwal || "-", // Mengirim kode guru dari jadwal
+                    kodeKelas: dataScanAktif.kodeKelas,
+                    namaKelas: dataScanAktif.namaKelas,
+                    tanggal: new Date().toLocaleDateString('id-ID'),
+                    jamScan: new Date().toLocaleTimeString('id-ID'),
+                    jamKe: dataScanAktif.jamKe,
+                    kodeMapel: dataScanAktif.kodeMapel,
+                    namaMapel: dataScanAktif.kodeMapel, // Bisa disesuaikan jika ingin nama panjang
+                    fotoBase64: base64String
+                };
+                
+                try {
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if(result.status === 'success') {
+                        alert("Absen Berhasil Disimpan!");
+                        location.reload();
+                    }
+                } catch (e) {
+                    alert("Terjadi kesalahan jaringan.");
+                    document.getElementById('btn-hadir').innerText = "HADIR";
+                    document.getElementById('btn-hadir').disabled = false;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
 </body>
 </html>
