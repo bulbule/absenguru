@@ -25,6 +25,9 @@
             --accent-blue: #E0F2FE;
             --accent-blue-text: #0284C7;
             --danger: #DC2626;
+            --warning-bg: #FEF9C3;
+            --warning-text: #854D0E;
+            --warning-border: #FDE047;
         }
 
         * {
@@ -226,7 +229,7 @@
         }
 
         .btn-primary:disabled {
-            background-color: #94A3B8;
+            background-color: #94A3B8 !important;
             box-shadow: none;
             cursor: not-allowed;
         }
@@ -297,6 +300,22 @@
             font-weight: 600;
             color: #64748B;
             margin-top: 2px;
+        }
+
+        /* Warning Box */
+        .warning-box {
+            background-color: var(--warning-bg);
+            color: var(--warning-text);
+            border: 1.5px solid var(--warning-border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
         }
 
         /* Selfie Photo Box */
@@ -460,6 +479,16 @@
                 </div>
             </div>
 
+            <!-- NOTIFIKASI GURU PENGGANTI (Disembunyikan secara default) -->
+            <div id="warning-jadwal" class="warning-box hidden">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span><b>Peringatan:</b> Anda tidak terdaftar pada jadwal ini. Klik tombol di bawah jika Anda adalah Guru Pengganti.</span>
+            </div>
+
             <!-- Selfie Photo Section -->
             <div class="form-group" style="margin-bottom: 20px;">
                 <label class="label-title" style="color: var(--text-sub);">Ambil Foto Selfie di Kelas</label>
@@ -489,11 +518,13 @@
 
     </div>
 
-    <!-- Script Logic Original -->
+    <!-- Script Logic -->
     <script>
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhyiVLzu_eDlfezio5mlf3wBUOJ4tJDPdLFYtgaKTOuD7yJcuW3q7Uc95hoS-_KYqYqA/exec'; 
-
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby55ka5Oxr_gemyX-6T5xJTTOt50Wby9eRwJh1xyjSuMR9d4fuya208zsW0Qh-wDlbrkw/exec'; 
+        
         let jadwalHariIni = [];
+        let dataGuruFull = []; // Menyimpan daftar lengkap beserta kode guru
+        let kodeGuruAktif = ""; // Menyimpan kode guru yang sedang absen
         let dataScanAktif = {};
         let html5QrCode = null;
 
@@ -504,13 +535,15 @@
                 const data = await response.json();
                 
                 jadwalHariIni = data.jadwalHariIni || [];
+                dataGuruFull = data.guruData || []; // Mengambil data baru dari Code.gs
                 
                 const datalist = document.getElementById('list-guru');
                 datalist.innerHTML = ''; 
-                if (data.guru) {
-                    data.guru.forEach(nama => {
+
+                if (dataGuruFull.length > 0) {
+                    dataGuruFull.forEach(guru => {
                         let option = document.createElement('option');
-                        option.value = nama;
+                        option.value = guru.nama; // UI hanya menampilkan nama
                         datalist.appendChild(option);
                     });
                 }
@@ -527,13 +560,25 @@
             return now;
         }
 
-        // 2. Mulai Kamera Scanner
+        // 2. Mulai Kamera Scanner & VALIDASI NAMA
         function startScanner() {
-            const namaGuru = document.getElementById('namaGuru').value;
+            const namaGuru = document.getElementById('namaGuru').value.trim();
             if(!namaGuru) {
                 alert("Pilih / isi nama guru terlebih dahulu!");
                 return;
             }
+
+            // --- FITUR BARU: VALIDASI NAMA GURU ---
+            const guruMatch = dataGuruFull.find(g => g.nama.toLowerCase() === namaGuru.toLowerCase());
+            
+            if (!guruMatch) {
+                alert("Nama guru harus sesuai yang didaftarkan sistem! Silakan pilih nama dari daftar rekomendasi yang muncul saat Anda mengetik.");
+                return; // Hentikan proses, kamera tidak terbuka
+            }
+            
+            // Simpan kode guru secara rahasia di background
+            kodeGuruAktif = guruMatch.kode; 
+            // --------------------------------------
 
             document.getElementById('reader').classList.remove('hidden');
             document.getElementById('btn-scan').classList.add('hidden');
@@ -557,7 +602,7 @@
             });
         }
 
-        // 3. Olah Hasil Scan QR & Pencocokan Jam
+        // 3. Olah Hasil Scan QR & Pengecekan Jadwal
         function prosesHasilScan(decodedText) {
             let namaKelas = decodedText.replace('QR-KL-', '').trim();
             
@@ -580,6 +625,7 @@
             document.getElementById('disp-kelas').innerText = namaKelas;
 
             const btnHadir = document.getElementById('btn-hadir');
+            const warningDiv = document.getElementById('warning-jadwal');
 
             if (currentJam && currentJam.jamKe !== "Istirahat/Lainnya") {
                 let pelajaran = currentJam.pelajaran ? currentJam.pelajaran[namaKelas] : null;
@@ -589,24 +635,42 @@
                     document.getElementById('disp-jam-range').innerText = `${currentJam.mulai} - ${currentJam.selesai} WIB`;
                     btnHadir.disabled = false;
 
+                    // --- FITUR BARU: VALIDASI GURU PENGGANTI ---
+                    let scheduledKodeGuru = pelajaran.kodeGuru ? pelajaran.kodeGuru.toString() : "-";
+                    
+                    if (kodeGuruAktif !== scheduledKodeGuru && kodeGuruAktif !== "PIKET") {
+                        // Jika guru yang scan beda dengan guru di jadwal
+                        alert("Notifikasi: Guru tidak sesuai jadwal.");
+                        warningDiv.classList.remove('hidden');
+                        btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>LANJUTKAN SEBAGAI PENGGANTI</span>`;
+                        btnHadir.style.backgroundColor = "#D97706"; // Warna Orange Peringatan
+                    } else {
+                        // Jika jadwal cocok
+                        warningDiv.classList.add('hidden');
+                        btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
+                        btnHadir.style.backgroundColor = "var(--primary)";
+                    }
+                    // ------------------------------------------
+
                     dataScanAktif = {
                         kodeKelas: decodedText,
                         namaKelas: namaKelas,
                         jamKe: currentJam.jamKe,
-                        kodeMapel: pelajaran.kodeMapel,
-                        kodeGuruJadwal: pelajaran.kodeGuru || "-"
+                        kodeMapel: pelajaran.kodeMapel
                     };
                 } else {
                     document.getElementById('disp-jam-title').innerText = `Jam Ke-${currentJam.jamKe}`;
                     document.getElementById('disp-mapel').innerText = "Jam Kosong";
                     document.getElementById('disp-jam-range').innerText = "Tidak ada jadwal di kelas ini";
                     btnHadir.disabled = true;
+                    warningDiv.classList.add('hidden');
                 }
             } else {
                 document.getElementById('disp-jam-title').innerText = "Status KBM";
                 document.getElementById('disp-mapel').innerText = "Jam Istirahat / Di luar KBM";
                 document.getElementById('disp-jam-range').innerText = "";
                 btnHadir.disabled = true;
+                warningDiv.classList.add('hidden');
             }
         }
 
@@ -633,8 +697,13 @@
             document.getElementById('btn-scan').classList.remove('hidden');
             document.getElementById('selfie-preview').src = 'https://via.placeholder.com/400x220?text=Klik+untuk+ambil+foto+selfie';
             document.getElementById('fotoSelfie').value = '';
-            document.getElementById('btn-hadir').innerText = "HADIR";
-            document.getElementById('btn-hadir').disabled = false;
+            
+            // Reset Button & Warning Box
+            document.getElementById('warning-jadwal').classList.add('hidden');
+            const btnHadir = document.getElementById('btn-hadir');
+            btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
+            btnHadir.style.backgroundColor = "var(--primary)";
+            btnHadir.disabled = false;
         }
 
         // 4. Kirim Data Absen
@@ -659,7 +728,7 @@
                 
                 const payload = {
                     namaGuru: nama,
-                    kodeGuru: dataScanAktif.kodeGuruJadwal || "-",
+                    kodeGuru: kodeGuruAktif, // Mengirim kode guru asli yang melakukan scan
                     kodeKelas: dataScanAktif.kodeKelas,
                     namaKelas: dataScanAktif.namaKelas,
                     tanggal: new Date().toLocaleDateString('id-ID'),
@@ -681,13 +750,11 @@
                         location.reload();
                     } else {
                         alert("Gagal menyimpan absen. Silakan coba lagi.");
-                        btnHadir.innerText = "HADIR";
-                        btnHadir.disabled = false;
+                        resetForm(); // Reset jika gagal agar bisa coba lagi
                     }
                 } catch (e) {
                     alert("Terjadi kesalahan jaringan.");
-                    btnHadir.innerText = "HADIR";
-                    btnHadir.disabled = false;
+                    resetForm();
                 }
             };
             reader.readAsDataURL(file);
