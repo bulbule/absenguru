@@ -2,46 +2,500 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scan Absen Guru MBS</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- HTML5 QR Code Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-        input, button, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        #reader { width: 100%; margin-top: 20px; }
-        .hidden { display: none; }
+        :root {
+            --primary: #002B66;
+            --primary-hover: #001F4D;
+            --bg-color: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #64748B;
+            --border-color: #E2E8F0;
+            --accent-blue: #E0F2FE;
+            --accent-blue-text: #0284C7;
+            --danger: #DC2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 24px;
+        }
+
+        /* Top Navigation Header */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+
+        .btn-back {
+            background: #FFFFFF;
+            border: 1px solid var(--border-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s;
+        }
+
+        .btn-back:active {
+            transform: scale(0.95);
+        }
+
+        /* Screen Header */
+        .header-section {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 85px;
+            width: auto;
+            object-fit: contain;
+            margin-bottom: 12px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.3px;
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Card Container */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 43, 102, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            width: 20px;
+            height: 20px;
+            color: #94A3B8;
+            pointer-events: none;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            background-color: #F8FAFC;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(0, 43, 102, 0.1);
+        }
+
+        /* QR Scanner Display Card */
+        .scan-card {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 20px;
+        }
+
+        .qr-badge-icon {
+            width: 68px;
+            height: 68px;
+            background-color: #E0F2FE;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            color: #0284C7;
+        }
+
+        /* Camera & Reader Area */
+        #reader {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px dashed var(--primary);
+            background: #000;
+            margin-top: 10px;
+        }
+
+        #reader video {
+            object-fit: cover !important;
+            border-radius: 14px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            background-color: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 43, 102, 0.2);
+            transition: all 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background-color: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            background-color: #94A3B8;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .btn-outline-danger {
+            width: 100%;
+            background-color: transparent;
+            color: var(--danger);
+            border: 1.5px solid var(--danger);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-outline-danger:active {
+            background-color: #FEF2F2;
+        }
+
+        /* Result Screen Elements */
+        .info-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .info-icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #EEF2FF;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .info-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .info-value-main {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+            margin-top: 2px;
+        }
+
+        .info-value-sub {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748B;
+            margin-top: 2px;
+        }
+
+        /* Selfie Photo Box */
+        .photo-upload-box {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            border-radius: 16px;
+            background-color: #E2E8F0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #CBD5E1;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .photo-preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-overlay-btn {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            background: rgba(255, 255, 255, 0.95);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            color: var(--primary);
+        }
+
+        /* Hidden Utility */
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Scan Absen Guru MBS</h2>
-    
-    <label>Nama Guru (Ketik untuk mencari):</label>
-    <input list="list-guru" id="namaGuru" placeholder="Contoh: Ahmad...">
-    <datalist id="list-guru">
-        <option value="Memuat data guru...">
-    </datalist>
+    <div class="app-container">
 
-    <div id="reader"></div>
-    <button id="btn-scan" onclick="startScanner()">Buka Kamera Scan QR Kelas</button>
+        <!-- ================= SCREEN 1: UTAMA / SCAN ================= -->
+        <div id="screen-scan">
+            <!-- Header Logo & Title -->
+            <div class="header-section" style="margin-top: 16px;">
+                <img src="LOGO PONPES MALIKA mbs.webp" alt="Logo MBS" class="logo-img" onerror="this.src='https://via.placeholder.com/100?text=MBS+Logo'">
+                <h1 class="page-title">Scan Absen Guru MBS</h1>
+                <p class="page-subtitle">Pilih nama guru terlebih dahulu</p>
+            </div>
 
-    <div id="form-hasil" class="hidden">
-        <h3>Data Kelas & Jam Pelajaran</h3>
-        <input type="text" id="hasil-kelas" readonly style="background:#eee; font-weight:bold;">
-        <input type="text" id="hasil-jam" readonly style="background:#eee; color:#3498db; font-weight:bold;">
-        
-        <label>Ambil Foto Selfie di Kelas:</label>
-        <input type="file" id="fotoSelfie" accept="image/*" capture="user">
-        
-        <button id="btn-hadir" onclick="submitAbsen()" style="background: #2ecc71; color: white; font-weight: bold; font-size: 1.2em;">HADIR</button>
+            <!-- Input Nama Guru Card -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label class="label-title">Nama Guru (Ketik untuk mencari)</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input list="list-guru" id="namaGuru" class="input-field" placeholder="Contoh: Ahmad...">
+                        <datalist id="list-guru">
+                            <option value="Memuat data guru...">
+                        </datalist>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera / Scan Card -->
+            <div class="card scan-card" style="margin-top: 16px;">
+                <div class="qr-badge-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main);">Scan QR Code Kelas</h3>
+                <p style="font-size: 13px; color: var(--text-sub); margin-top: 4px; margin-bottom: 20px;">Arahkan kamera ke QR Code yang tersedia di kelas</p>
+
+                <!-- Container Video Scanner -->
+                <div id="reader" class="hidden"></div>
+
+                <button id="btn-scan" class="btn-primary" onclick="startScanner()">
+                    <span>Buka Kamera Scan QR</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= SCREEN 2: FORM HASIL SCAN ================= -->
+        <div id="screen-result" class="hidden">
+            <!-- Top Bar Navigation -->
+            <div class="top-bar">
+                <button class="btn-back" onclick="resetForm()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2.5">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="header-section" style="align-items: flex-start; text-align: left; margin-bottom: 16px;">
+                <h1 class="page-title" style="font-size: 22px;">Scan Absen Guru MBS</h1>
+            </div>
+
+            <!-- Profile Info Field -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="label-title" style="color: var(--text-sub);">Nama Guru</label>
+                <div class="input-wrapper">
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <input type="text" id="result-nama-guru" class="input-field" readonly style="background-color: #FFFFFF;">
+                </div>
+            </div>
+
+            <!-- Detail Class & Schedule -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="label-title" style="color: var(--text-sub); margin-bottom: 4px;">Data Kelas & Jam Pelajaran</label>
+                
+                <!-- Class Card -->
+                <div class="info-card">
+                    <div class="info-icon-circle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                    </div>
+                    <div class="info-content">
+                        <span class="info-label">Kelas</span>
+                        <span id="disp-kelas" class="info-value-main">-</span>
+                    </div>
+                </div>
+
+                <!-- Subject & Time Card -->
+                <div class="info-card">
+                    <div class="info-icon-circle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="info-content">
+                        <span id="disp-jam-title" class="info-label">Jam Ke- | Mapel</span>
+                        <span id="disp-mapel" class="info-value-main">-</span>
+                        <span id="disp-jam-range" class="info-value-sub"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selfie Photo Section -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="label-title" style="color: var(--text-sub);">Ambil Foto Selfie di Kelas</label>
+                <div class="photo-upload-box" onclick="document.getElementById('fotoSelfie').click()">
+                    <img id="selfie-preview" src="https://via.placeholder.com/400x220?text=Klik+untuk+ambil+foto+selfie" class="photo-preview-img">
+                    <div class="photo-overlay-btn">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Native Camera Input -->
+                <input type="file" id="fotoSelfie" accept="image/*" capture="user" class="hidden" onchange="previewPhoto(event)">
+            </div>
+
+            <!-- Action Buttons -->
+            <button id="btn-hadir" class="btn-primary" onclick="submitAbsen()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>HADIR</span>
+            </button>
+
+            <button class="btn-outline-danger" onclick="resetForm()">Batal</button>
+        </div>
+
     </div>
 
+    <!-- Script Logic Original -->
     <script>
-        // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhyiVLzu_eDlfezio5mlf3wBUOJ4tJDPdLFYtgaKTOuD7yJcuW3q7Uc95hoS-_KYqYqA/exec'; 
 
         let jadwalHariIni = [];
         let dataScanAktif = {};
+        let html5QrCode = null;
 
         // 1. Tarik Data Guru dan Jadwal saat aplikasi dibuka
         window.onload = async function() {
@@ -49,15 +503,17 @@
                 const response = await fetch(APPS_SCRIPT_URL + '?action=getInitData');
                 const data = await response.json();
                 
-                jadwalHariIni = data.jadwalHariIni;
+                jadwalHariIni = data.jadwalHariIni || [];
                 
                 const datalist = document.getElementById('list-guru');
                 datalist.innerHTML = ''; 
-                data.guru.forEach(nama => {
-                    let option = document.createElement('option');
-                    option.value = nama;
-                    datalist.appendChild(option);
-                });
+                if (data.guru) {
+                    data.guru.forEach(nama => {
+                        let option = document.createElement('option');
+                        option.value = nama;
+                        datalist.appendChild(option);
+                    });
+                }
             } catch (e) {
                 alert("Gagal memuat data dari server. Pastikan koneksi internet stabil.");
             }
@@ -71,73 +527,129 @@
             return now;
         }
 
-        // 2. Mulai Kamera
+        // 2. Mulai Kamera Scanner
         function startScanner() {
-            const html5QrCode = new Html5Qrcode("reader");
+            const namaGuru = document.getElementById('namaGuru').value;
+            if(!namaGuru) {
+                alert("Pilih / isi nama guru terlebih dahulu!");
+                return;
+            }
+
+            document.getElementById('reader').classList.remove('hidden');
+            document.getElementById('btn-scan').classList.add('hidden');
+
+            html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                { fps: 10, qrbox: { width: 220, height: 220 } },
                 (decodedText, decodedResult) => {
-                    html5QrCode.stop();
-                    document.getElementById('reader').classList.add('hidden');
-                    document.getElementById('btn-scan').classList.add('hidden');
-                    document.getElementById('form-hasil').classList.remove('hidden');
-                    
-                    // Format QR contoh: "QR-KL-VII.1 (PUTRA)" -> kita ambil "VII.1 (PUTRA)"
-                    let namaKelas = decodedText.replace('QR-KL-', '').trim();
-                    document.getElementById('hasil-kelas').value = "Kelas: " + namaKelas;
-                    
-                    // 3. Pencocokan Jam Realtime dengan Jadwal
-                    let now = new Date();
-                    let currentJam = null;
-
-                    for (let j of jadwalHariIni) {
-                        let start = parseTime(j.mulai);
-                        let end = parseTime(j.selesai);
-                        if (now >= start && now <= end) {
-                            currentJam = j;
-                            break;
-                        }
-                    }
-
-                    if (currentJam && currentJam.jamKe !== "Istirahat/Lainnya") {
-                        let pelajaran = currentJam.pelajaran[namaKelas];
-                        if(pelajaran && pelajaran.kodeMapel && pelajaran.kodeMapel !== "") {
-                            document.getElementById('hasil-jam').value = `Jam Ke-${currentJam.jamKe} | Mapel: ${pelajaran.kodeMapel}`;
-                            
-                            // Simpan ke variabel global untuk dikirim ke database
-                            dataScanAktif = {
-                                kodeKelas: decodedText,
-                                namaKelas: namaKelas,
-                                jamKe: currentJam.jamKe,
-                                kodeMapel: pelajaran.kodeMapel,
-                                kodeGuruJadwal: pelajaran.kodeGuru // Menyimpan kode guru yang seharusnya mengajar
-                            };
-                        } else {
-                            document.getElementById('hasil-jam').value = "Jam Kosong untuk kelas ini.";
-                            document.getElementById('btn-hadir').disabled = true;
-                        }
-                    } else {
-                        document.getElementById('hasil-jam').value = "Sedang Jam Istirahat / Di luar KBM";
-                        document.getElementById('btn-hadir').disabled = true;
-                    }
+                    html5QrCode.stop().then(() => {
+                        document.getElementById('reader').classList.add('hidden');
+                        document.getElementById('btn-scan').classList.remove('hidden');
+                        prosesHasilScan(decodedText);
+                    });
                 },
-                (errorMessage) => { /* Abaikan error pembacaan frame per detik */ }
-            );
+                (errorMessage) => { /* Abaikan error per frame */ }
+            ).catch(err => {
+                alert("Tidak dapat membuka kamera. Pastikan izin kamera telah diberikan.");
+                document.getElementById('reader').classList.add('hidden');
+                document.getElementById('btn-scan').classList.remove('hidden');
+            });
+        }
+
+        // 3. Olah Hasil Scan QR & Pencocokan Jam
+        function prosesHasilScan(decodedText) {
+            let namaKelas = decodedText.replace('QR-KL-', '').trim();
+            
+            let now = new Date();
+            let currentJam = null;
+
+            for (let j of jadwalHariIni) {
+                let start = parseTime(j.mulai);
+                let end = parseTime(j.selesai);
+                if (now >= start && now <= end) {
+                    currentJam = j;
+                    break;
+                }
+            }
+
+            // Tampilkan Layar Form Hasil
+            document.getElementById('screen-scan').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('result-nama-guru').value = document.getElementById('namaGuru').value;
+            document.getElementById('disp-kelas').innerText = namaKelas;
+
+            const btnHadir = document.getElementById('btn-hadir');
+
+            if (currentJam && currentJam.jamKe !== "Istirahat/Lainnya") {
+                let pelajaran = currentJam.pelajaran ? currentJam.pelajaran[namaKelas] : null;
+                if(pelajaran && pelajaran.kodeMapel && pelajaran.kodeMapel !== "") {
+                    document.getElementById('disp-jam-title').innerText = `Jam Ke-${currentJam.jamKe} | Mapel`;
+                    document.getElementById('disp-mapel').innerText = pelajaran.kodeMapel;
+                    document.getElementById('disp-jam-range').innerText = `${currentJam.mulai} - ${currentJam.selesai} WIB`;
+                    btnHadir.disabled = false;
+
+                    dataScanAktif = {
+                        kodeKelas: decodedText,
+                        namaKelas: namaKelas,
+                        jamKe: currentJam.jamKe,
+                        kodeMapel: pelajaran.kodeMapel,
+                        kodeGuruJadwal: pelajaran.kodeGuru || "-"
+                    };
+                } else {
+                    document.getElementById('disp-jam-title').innerText = `Jam Ke-${currentJam.jamKe}`;
+                    document.getElementById('disp-mapel').innerText = "Jam Kosong";
+                    document.getElementById('disp-jam-range').innerText = "Tidak ada jadwal di kelas ini";
+                    btnHadir.disabled = true;
+                }
+            } else {
+                document.getElementById('disp-jam-title').innerText = "Status KBM";
+                document.getElementById('disp-mapel').innerText = "Jam Istirahat / Di luar KBM";
+                document.getElementById('disp-jam-range').innerText = "";
+                btnHadir.disabled = true;
+            }
+        }
+
+        // Preview Foto Selfie
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('selfie-preview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Reset & Kembali ke Layar Awal
+        function resetForm() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop();
+            }
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-scan').classList.remove('hidden');
+            document.getElementById('reader').classList.add('hidden');
+            document.getElementById('btn-scan').classList.remove('hidden');
+            document.getElementById('selfie-preview').src = 'https://via.placeholder.com/400x220?text=Klik+untuk+ambil+foto+selfie';
+            document.getElementById('fotoSelfie').value = '';
+            document.getElementById('btn-hadir').innerText = "HADIR";
+            document.getElementById('btn-hadir').disabled = false;
         }
 
         // 4. Kirim Data Absen
         async function submitAbsen() {
-            const nama = document.getElementById('namaGuru').value;
+            const nama = document.getElementById('result-nama-guru').value;
             const fileInput = document.getElementById('fotoSelfie');
 
             if(!nama || fileInput.files.length === 0) {
-                alert("Mohon lengkapi nama dan foto selfie!");
+                alert("Mohon lengkapi foto selfie terlebih dahulu!");
                 return;
             }
 
-            document.getElementById('btn-hadir').innerText = "MENGIRIM...";
-            document.getElementById('btn-hadir').disabled = true;
+            const btnHadir = document.getElementById('btn-hadir');
+            btnHadir.innerText = "MENGIRIM...";
+            btnHadir.disabled = true;
 
             const file = fileInput.files[0];
             const reader = new FileReader();
@@ -147,14 +659,14 @@
                 
                 const payload = {
                     namaGuru: nama,
-                    kodeGuru: dataScanAktif.kodeGuruJadwal || "-", // Mengirim kode guru dari jadwal
+                    kodeGuru: dataScanAktif.kodeGuruJadwal || "-",
                     kodeKelas: dataScanAktif.kodeKelas,
                     namaKelas: dataScanAktif.namaKelas,
                     tanggal: new Date().toLocaleDateString('id-ID'),
                     jamScan: new Date().toLocaleTimeString('id-ID'),
                     jamKe: dataScanAktif.jamKe,
                     kodeMapel: dataScanAktif.kodeMapel,
-                    namaMapel: dataScanAktif.kodeMapel, // Bisa disesuaikan jika ingin nama panjang
+                    namaMapel: dataScanAktif.kodeMapel,
                     fotoBase64: base64String
                 };
                 
@@ -167,11 +679,15 @@
                     if(result.status === 'success') {
                         alert("Absen Berhasil Disimpan!");
                         location.reload();
+                    } else {
+                        alert("Gagal menyimpan absen. Silakan coba lagi.");
+                        btnHadir.innerText = "HADIR";
+                        btnHadir.disabled = false;
                     }
                 } catch (e) {
                     alert("Terjadi kesalahan jaringan.");
-                    document.getElementById('btn-hadir').innerText = "HADIR";
-                    document.getElementById('btn-hadir').disabled = false;
+                    btnHadir.innerText = "HADIR";
+                    btnHadir.disabled = false;
                 }
             };
             reader.readAsDataURL(file);
