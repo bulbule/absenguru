@@ -12,7 +12,7 @@
     
     <!-- HTML5 QR Code Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
+    
     <style>
         :root {
             --primary: #002B66;
@@ -479,7 +479,7 @@
                 </div>
             </div>
 
-            <!-- NOTIFIKASI GURU PENGGANTI (Disembunyikan secara default) -->
+            <!-- NOTIFIKASI GURU PENGGANTI -->
             <div id="warning-jadwal" class="warning-box hidden">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -515,7 +515,6 @@
 
             <button class="btn-outline-danger" onclick="resetForm()">Batal</button>
         </div>
-
     </div>
 
     <!-- Script Logic -->
@@ -523,8 +522,8 @@
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby55ka5Oxr_gemyX-6T5xJTTOt50Wby9eRwJh1xyjSuMR9d4fuya208zsW0Qh-wDlbrkw/exec';
         
         let jadwalHariIni = [];
-        let dataGuruFull = []; // Menyimpan daftar lengkap beserta kode guru
-        let kodeGuruAktif = ""; // Menyimpan kode guru yang sedang absen
+        let dataGuruFull = []; 
+        let kodeGuruAktif = ""; 
         let dataScanAktif = {};
         let html5QrCode = null;
 
@@ -535,7 +534,7 @@
                 const data = await response.json();
                 
                 jadwalHariIni = data.jadwalHariIni || [];
-                dataGuruFull = data.guruData || []; // Mengambil data baru dari Code.gs
+                dataGuruFull = data.guruData || []; 
                 
                 const datalist = document.getElementById('list-guru');
                 datalist.innerHTML = ''; 
@@ -543,11 +542,15 @@
                 if (dataGuruFull.length > 0) {
                     dataGuruFull.forEach(guru => {
                         let option = document.createElement('option');
-                        option.value = guru.nama; // UI hanya menampilkan nama
+                        // Menyesuaikan pembacaan jika data berbentuk array maupun object
+
+                        let namaGuru = guru.nama || guru.Nama || guru[1] || guru;
+                        option.value = namaGuru; 
                         datalist.appendChild(option);
                     });
                 }
             } catch (e) {
+                console.error(e);
                 alert("Gagal memuat data dari server. Pastikan koneksi internet stabil.");
             }
         };
@@ -568,17 +571,17 @@
                 return;
             }
 
-            // --- FITUR BARU: VALIDASI NAMA GURU ---
-            const guruMatch = dataGuruFull.find(g => g.nama.toLowerCase() === namaGuru.toLowerCase());
+            const guruMatch = dataGuruFull.find(g => {
+                let n = g.nama || g.Nama || g[1] || g;
+                return n.toLowerCase() === namaGuru.toLowerCase();
+            });
             
             if (!guruMatch) {
                 alert("Nama guru harus sesuai yang didaftarkan sistem! Silakan pilih nama dari daftar rekomendasi yang muncul saat Anda mengetik.");
-                return; // Hentikan proses, kamera tidak terbuka
+                return; 
             }
             
-            // Simpan kode guru secara rahasia di background
-            kodeGuruAktif = guruMatch.kode; 
-            // --------------------------------------
+            kodeGuruAktif = guruMatch.kode || guruMatch.Kode || guruMatch[0] || ""; 
 
             document.getElementById('reader').classList.remove('hidden');
             document.getElementById('btn-scan').classList.add('hidden');
@@ -635,22 +638,18 @@
                     document.getElementById('disp-jam-range').innerText = `${currentJam.mulai} - ${currentJam.selesai} WIB`;
                     btnHadir.disabled = false;
 
-                    // --- FITUR BARU: VALIDASI GURU PENGGANTI ---
                     let scheduledKodeGuru = pelajaran.kodeGuru ? pelajaran.kodeGuru.toString() : "-";
                     
                     if (kodeGuruAktif !== scheduledKodeGuru && kodeGuruAktif !== "PIKET") {
-                        // Jika guru yang scan beda dengan guru di jadwal
                         alert("Notifikasi: Guru tidak sesuai jadwal.");
                         warningDiv.classList.remove('hidden');
                         btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>LANJUTKAN SEBAGAI PENGGANTI</span>`;
-                        btnHadir.style.backgroundColor = "#D97706"; // Warna Orange Peringatan
+                        btnHadir.style.backgroundColor = "#D97706";
                     } else {
-                        // Jika jadwal cocok
                         warningDiv.classList.add('hidden');
                         btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
                         btnHadir.style.backgroundColor = "var(--primary)";
                     }
-                    // ------------------------------------------
 
                     dataScanAktif = {
                         kodeKelas: decodedText,
@@ -698,7 +697,6 @@
             document.getElementById('selfie-preview').src = 'https://via.placeholder.com/400x220?text=Klik+untuk+ambil+foto+selfie';
             document.getElementById('fotoSelfie').value = '';
             
-            // Reset Button & Warning Box
             document.getElementById('warning-jadwal').classList.add('hidden');
             const btnHadir = document.getElementById('btn-hadir');
             btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
@@ -706,7 +704,7 @@
             btnHadir.disabled = false;
         }
 
-        // 4. Kirim Data Absen (DENGAN KOMPRESI FOTO)
+        // 4. Kirim Data Absen
         async function submitAbsen() {
             const nama = document.getElementById('result-nama-guru').value;
             const fileInput = document.getElementById('fotoSelfie');
@@ -723,21 +721,16 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
             
-            // Membaca file gambar untuk dikompres
             reader.onload = function(event) {
                 const img = new Image();
                 img.src = event.target.result;
 
                 img.onload = async function() {
-                    // --- PROSES KOMPRESI GAMBAR ---
                     const canvas = document.createElement('canvas');
-                    
-                    // 1. NAIKKAN RESOLUSI: Dari 600 menjadi 800 pixel agar gambar lebih tajam
                     const MAX_WIDTH = 800; 
                     let width = img.width;
                     let height = img.height;
 
-                    // Menyesuaikan rasio tinggi dan lebar
                     if (width > MAX_WIDTH) {
                         height = height * (MAX_WIDTH / width);
                         width = MAX_WIDTH;
@@ -749,13 +742,11 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // 2. NAIKKAN KUALITAS: Dari 0.6 (60%) menjadi 0.8 (80%)
-                    // Hasilnya file akan berada di kisaran 100KB - 200KB. Wajah sangat jelas, tapi tetap cepat terkirim!
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    // --- SELESAI KOMPRESI ---
+                    
                     const payload = {
                         namaGuru: nama,
-                        kodeGuru: kodeGuruAktif, // Mengirim kode guru asli yang melakukan scan
+                        kodeGuru: kodeGuruAktif,
                         kodeKelas: dataScanAktif.kodeKelas,
                         namaKelas: dataScanAktif.namaKelas,
                         tanggal: new Date().toLocaleDateString('id-ID'),
@@ -763,10 +754,10 @@
                         jamKe: dataScanAktif.jamKe,
                         kodeMapel: dataScanAktif.kodeMapel,
                         namaMapel: dataScanAktif.kodeMapel,
-                        fotoBase64: compressedBase64 // MENGGUNAKAN FOTO YANG SUDAH KECIL
+                        fotoBase64: compressedBase64 
                     };
                     
-                     try {
+                    try {
                         const response = await fetch(APPS_SCRIPT_URL, {
                             method: 'POST',
                             body: JSON.stringify(payload)
@@ -783,11 +774,9 @@
                         alert("Koneksi internet sedang lambat, namun absen Anda sedang diproses oleh sistem. Tekan OK untuk melanjutkan KBM.");
                         resetForm(); 
                     }
-                    }
                 };
             };
             
-            // Trigger pembacaan file
             reader.readAsDataURL(file);
         }
     </script>
