@@ -750,7 +750,10 @@
                         kodeKelas: dataScanAktif.kodeKelas,
                         namaKelas: dataScanAktif.namaKelas,
                         tanggal: new Date().toLocaleDateString('id-ID'),
-                        jamScan: new Date().toLocaleTimeString('id-ID'),
+                        
+                        // FIX: Mengganti semua titik menjadi titik dua (:) pada jam scan
+                        jamScan: new Date().toLocaleTimeString('id-ID').replace(/\./g, ':'),
+                        
                         jamKe: dataScanAktif.jamKe,
                         kodeMapel: dataScanAktif.kodeMapel,
                         namaMapel: dataScanAktif.kodeMapel,
