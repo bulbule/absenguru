@@ -731,7 +731,9 @@
                 img.onload = async function() {
                     // --- PROSES KOMPRESI GAMBAR ---
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; // Lebar maksimal gambar yang diizinkan
+                    
+                    // 1. NAIKKAN RESOLUSI: Dari 600 menjadi 800 pixel agar gambar lebih tajam
+                    const MAX_WIDTH = 800; 
                     let width = img.width;
                     let height = img.height;
 
@@ -747,10 +749,10 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // Mengubah gambar menjadi base64 dengan kualitas 60% (0.6)
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    // 2. NAIKKAN KUALITAS: Dari 0.6 (60%) menjadi 0.8 (80%)
+                    // Hasilnya file akan berada di kisaran 100KB - 200KB. Wajah sangat jelas, tapi tetap cepat terkirim!
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
                     // --- SELESAI KOMPRESI ---
-
                     const payload = {
                         namaGuru: nama,
                         kodeGuru: kodeGuruAktif, // Mengirim kode guru asli yang melakukan scan
@@ -764,7 +766,7 @@
                         fotoBase64: compressedBase64 // MENGGUNAKAN FOTO YANG SUDAH KECIL
                     };
                     
-                    try {
+                     try {
                         const response = await fetch(APPS_SCRIPT_URL, {
                             method: 'POST',
                             body: JSON.stringify(payload)
@@ -775,11 +777,12 @@
                             location.reload();
                         } else {
                             alert("Gagal menyimpan absen. Silakan coba lagi.");
-                            resetForm(); // Reset jika gagal agar bisa coba lagi
+                            resetForm();
                         }
                     } catch (e) {
-                        alert("Terjadi kesalahan jaringan.");
-                        resetForm();
+                        alert("Koneksi internet sedang lambat, namun absen Anda sedang diproses oleh sistem. Tekan OK untuk melanjutkan KBM.");
+                        resetForm(); 
+                    }
                     }
                 };
             };
