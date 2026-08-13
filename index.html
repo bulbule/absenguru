@@ -520,7 +520,7 @@
 
     <!-- Script Logic -->
     <script>
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby55ka5Oxr_gemyX-6T5xJTTOt50Wby9eRwJh1xyjSuMR9d4fuya208zsW0Qh-wDlbrkw/exec'; 
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby55ka5Oxr_gemyX-6T5xJTTOt50Wby9eRwJh1xyjSuMR9d4fuya208zsW0Qh-wDlbrkw/exec';
         
         let jadwalHariIni = [];
         let dataGuruFull = []; // Menyimpan daftar lengkap beserta kode guru
@@ -706,7 +706,7 @@
             btnHadir.disabled = false;
         }
 
-        // 4. Kirim Data Absen
+        // 4. Kirim Data Absen (DENGAN KOMPRESI FOTO)
         async function submitAbsen() {
             const nama = document.getElementById('result-nama-guru').value;
             const fileInput = document.getElementById('fotoSelfie');
@@ -723,40 +723,68 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
             
-            reader.onloadend = async function() {
-                const base64String = reader.result;
-                
-                const payload = {
-                    namaGuru: nama,
-                    kodeGuru: kodeGuruAktif, // Mengirim kode guru asli yang melakukan scan
-                    kodeKelas: dataScanAktif.kodeKelas,
-                    namaKelas: dataScanAktif.namaKelas,
-                    tanggal: new Date().toLocaleDateString('id-ID'),
-                    jamScan: new Date().toLocaleTimeString('id-ID'),
-                    jamKe: dataScanAktif.jamKe,
-                    kodeMapel: dataScanAktif.kodeMapel,
-                    namaMapel: dataScanAktif.kodeMapel,
-                    fotoBase64: base64String
-                };
-                
-                try {
-                    const response = await fetch(APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    if(result.status === 'success') {
-                        alert("Absen Berhasil Disimpan!");
-                        location.reload();
-                    } else {
-                        alert("Gagal menyimpan absen. Silakan coba lagi.");
-                        resetForm(); // Reset jika gagal agar bisa coba lagi
+            // Membaca file gambar untuk dikompres
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+
+                img.onload = async function() {
+                    // --- PROSES KOMPRESI GAMBAR ---
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; // Lebar maksimal gambar yang diizinkan
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Menyesuaikan rasio tinggi dan lebar
+                    if (width > MAX_WIDTH) {
+                        height = height * (MAX_WIDTH / width);
+                        width = MAX_WIDTH;
                     }
-                } catch (e) {
-                    alert("Terjadi kesalahan jaringan.");
-                    resetForm();
-                }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Mengubah gambar menjadi base64 dengan kualitas 60% (0.6)
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    // --- SELESAI KOMPRESI ---
+
+                    const payload = {
+                        namaGuru: nama,
+                        kodeGuru: kodeGuruAktif, // Mengirim kode guru asli yang melakukan scan
+                        kodeKelas: dataScanAktif.kodeKelas,
+                        namaKelas: dataScanAktif.namaKelas,
+                        tanggal: new Date().toLocaleDateString('id-ID'),
+                        jamScan: new Date().toLocaleTimeString('id-ID'),
+                        jamKe: dataScanAktif.jamKe,
+                        kodeMapel: dataScanAktif.kodeMapel,
+                        namaMapel: dataScanAktif.kodeMapel,
+                        fotoBase64: compressedBase64 // MENGGUNAKAN FOTO YANG SUDAH KECIL
+                    };
+                    
+                    try {
+                        const response = await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if(result.status === 'success') {
+                            alert("Absen Berhasil Disimpan!");
+                            location.reload();
+                        } else {
+                            alert("Gagal menyimpan absen. Silakan coba lagi.");
+                            resetForm(); // Reset jika gagal agar bisa coba lagi
+                        }
+                    } catch (e) {
+                        alert("Terjadi kesalahan jaringan.");
+                        resetForm();
+                    }
+                };
             };
+            
+            // Trigger pembacaan file
             reader.readAsDataURL(file);
         }
     </script>
