@@ -12,7 +12,7 @@
     
     <!-- HTML5 QR Code Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
+
     <style>
         :root {
             --primary: #002B66;
@@ -526,6 +526,9 @@
         let kodeGuruAktif = ""; 
         let dataScanAktif = {};
         let html5QrCode = null;
+        
+        // VARIABEL BARU UNTUK MENAMPUNG JADWAL BERUNTUN
+        let sesiLanjutan = []; 
 
         // 1. Tarik Data Guru dan Jadwal saat aplikasi dibuka
         window.onload = async function() {
@@ -611,6 +614,7 @@
             
             let now = new Date();
             let currentJam = null;
+            sesiLanjutan = []; // Kosongkan data sesi beruntun sebelumnya
 
             for (let j of jadwalHariIni) {
                 let start = parseTime(j.mulai);
@@ -649,6 +653,36 @@
                         warningDiv.classList.add('hidden');
                         btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
                         btnHadir.style.backgroundColor = "var(--primary)";
+                        
+                        // FITUR BARU: CARI JAM BERUNTUN DI KELAS YANG SAMA
+                        let currentIndex = jadwalHariIni.findIndex(j => j.jamKe == currentJam.jamKe);
+                        let nextIndex = currentIndex + 1;
+                        
+                        while(nextIndex < jadwalHariIni.length) {
+                            let nextJam = jadwalHariIni[nextIndex];
+                            
+                            // Lewati jika jam istirahat
+                            if(nextJam.jamKe === "Istirahat/Lainnya" || !nextJam.jamKe) {
+                                nextIndex++; 
+                                continue;
+                            }
+                            
+                            let pelNext = nextJam.pelajaran[namaKelas];
+                            let kGuruNext = pelNext && pelNext.kodeGuru ? pelNext.kodeGuru.toString() : "";
+                            
+                            // Jika guru masih sama di jam berikutnya di kelas ini
+                            if (kGuruNext === kodeGuruAktif && kodeGuruAktif !== "") {
+                                sesiLanjutan.push({
+                                    jamKe: nextJam.jamKe,
+                                    kodeMapel: pelNext.kodeMapel,
+                                    namaMapel: pelNext.kodeMapel,
+                                    jamMulai: nextJam.mulai
+                                });
+                                nextIndex++;
+                            } else {
+                                break; // Berhenti mencari jika guru sudah beda
+                            }
+                        }
                     }
 
                     dataScanAktif = {
@@ -714,6 +748,28 @@
                 return;
             }
 
+            // MEYIAPKAN DATA YANG AKAN DIKIRIM (Bisa 1 jam, bisa banyak jam)
+            let listSesiKirim = [{
+                jamKe: dataScanAktif.jamKe,
+                kodeMapel: dataScanAktif.kodeMapel,
+                namaMapel: dataScanAktif.kodeMapel,
+                jamMulai: "" // Dikosongkan agar pakai jam real-time saat ini
+            }];
+
+            // MUNCULKAN POPUP JIKA ADA JAM BERUNTUN
+            if (sesiLanjutan.length > 0) {
+                // Buat teks daftar jam (Contoh: "Ke-5 (MTK), Ke-6 (MTK)")
+                let teksJam = sesiLanjutan.map(s => `Ke-${s.jamKe} (${s.kodeMapel})`).join(", ");
+                
+                // Tampilkan pesan konfirmasi persis seperti request Anda
+                let konfirmasi = confirm(`Jam pelajaran selanjutnya masih jam pelajaran ${teksJam} atas nama guru ${nama}, klik OK/Lanjut untuk otomatis menginput data yang sama.`);
+                
+                if (konfirmasi) {
+                    // Jika diklik OK, gabungkan data jam berikutnya ke dalam paket kiriman
+                    listSesiKirim = listSesiKirim.concat(sesiLanjutan);
+                }
+            }
+
             const btnHadir = document.getElementById('btn-hadir');
             btnHadir.innerText = "MENGIRIM...";
             btnHadir.disabled = true;
@@ -750,10 +806,12 @@
                         kodeKelas: dataScanAktif.kodeKelas,
                         namaKelas: dataScanAktif.namaKelas,
                         tanggal: new Date().toLocaleDateString('id-ID'),
-                        
-                        // FIX: Mengganti semua titik menjadi titik dua (:) pada jam scan
                         jamScan: new Date().toLocaleTimeString('id-ID').replace(/\./g, ':'),
                         
+                        // PAKET DATA GANDA DIKIRIM KE SERVER DISINI
+                        sesiList: listSesiKirim,
+                        
+                        // Fallback (jaga-jaga jika server butuh data satuan)
                         jamKe: dataScanAktif.jamKe,
                         kodeMapel: dataScanAktif.kodeMapel,
                         namaMapel: dataScanAktif.kodeMapel,
