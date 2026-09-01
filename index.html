@@ -384,8 +384,38 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                         <input list="list-guru" id="namaGuru" class="input-field" placeholder="Contoh: Ahmad...">
+                        <!-- Datalist di-hardcode agar super cepat tanpa loading -->
                         <datalist id="list-guru">
-                            <option value="Memuat data guru...">
+                            <!-- GURU PIKET DITAMBAHKAN DI SINI -->
+                            <option value="GURU PIKET">
+                            <option value="KH. Ahmad Multazam">
+                            <option value="KH. Ahmad Baehaki, Lc.">
+                            <option value="Ustadz. H. Syahroni, S.Pd.I">
+                            <option value="Ustadz Abd. Halim, S.S.I">
+                            <option value="Ustadzah Hj. Tania Zainiyah, S.Pd.">
+                            <option value="Ustadz H. M. Fauzi Azhar, Lc. MA.">
+                            <option value="Ust. Ahmad Royhan Mutsaqqof, Lc.">
+                            <option value="Ustadz Mukhsin, M.Pd.">
+                            <option value="Ustadz Mohammad Rahman Budiman, M.Pd">
+                            <option value="Sayyidah Anisa Rehlitna Pagit Girsang, S.Pd">
+                            <option value="Sayyidah Nurul Maudhunah Almunawaroh, S.Pd">
+                            <option value="Sayyidah Siti Nuraini Rosidin, S.Hum.">
+                            <option value="Ustadz Ahmad Gojali, S.I.Kom">
+                            <option value="Sayyidah Sausan Thahira">
+                            <option value="Sayyidah Melati">
+                            <option value="Sayyidah Syarifah Afifah, S.Hum">
+                            <option value="Ustadz Muhammad Azka Maula Syakur, Lc">
+                            <option value="Dr. Abdul Amin, Lc, MA">
+                            <option value="Ustadz Muhamad Chaedar Rafiq, M.Ag">
+                            <option value="Ustadz Angger Rian Fahreza, S.Pd">
+                            <option value="Sayyidah Anisa Salsabila, S.Hum">
+                            <option value="Sayyidah Ghita Fasya Azuar, S.Pd. Gr.">
+                            <option value="Sayyidah Nadya Elyana Pertiwi, S.Pd">
+                            <option value="Sayyidah Eva Fauzia Rahmi M.Pd">
+                            <option value="Sayyidah Alya Islahu">
+                            <option value="Ustadz M. Fikri Izzul Haq">
+                            <option value="Ustadz Muhammad Muchlis">
+                            <option value="Ustadz Hilal Al Munawwar">
                         </datalist>
                     </div>
                 </div>
@@ -522,39 +552,53 @@
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby55ka5Oxr_gemyX-6T5xJTTOt50Wby9eRwJh1xyjSuMR9d4fuya208zsW0Qh-wDlbrkw/exec';
         
         let jadwalHariIni = [];
-        let dataGuruFull = []; 
         let kodeGuruAktif = ""; 
         let dataScanAktif = {};
         let html5QrCode = null;
-        
-        // VARIABEL BARU UNTUK MENAMPUNG JADWAL BERUNTUN
         let sesiLanjutan = []; 
 
-        // 1. Tarik Data Guru dan Jadwal saat aplikasi dibuka
+        // Data Guru di-hardcode agar instan (diambil dari Spreadsheet DATA_GURU)
+        const dataGuruFull = [
+            {kode: "PIKET", nama: "GURU PIKET"}, // <-- GURU PIKET DITAMBAHKAN DI SINI
+            {kode: "1", nama: "KH. Ahmad Multazam"},
+            {kode: "2", nama: "KH. Ahmad Baehaki, Lc."},
+            {kode: "3", nama: "Ustadz. H. Syahroni, S.Pd.I"},
+            {kode: "4", nama: "Ustadz Abd. Halim, S.S.I"},
+            {kode: "5", nama: "Ustadzah Hj. Tania Zainiyah, S.Pd."},
+            {kode: "6", nama: "Ustadz H. M. Fauzi Azhar, Lc. MA."},
+            {kode: "7", nama: "Ust. Ahmad Royhan Mutsaqqof, Lc."},
+            {kode: "8", nama: "Ustadz Mukhsin, M.Pd."},
+            {kode: "9", nama: "Ustadz Mohammad Rahman Budiman, M.Pd"},
+            {kode: "10", nama: "Sayyidah Anisa Rehlitna Pagit Girsang, S.Pd"},
+            {kode: "11", nama: "Sayyidah Nurul Maudhunah Almunawaroh, S.Pd"},
+            {kode: "12", nama: "Sayyidah Siti Nuraini Rosidin, S.Hum."},
+            {kode: "13", nama: "Ustadz Ahmad Gojali, S.I.Kom"},
+            {kode: "14", nama: "Sayyidah Sausan Thahira"},
+            {kode: "15", nama: "Sayyidah Melati"},
+            {kode: "16", nama: "Sayyidah Syarifah Afifah, S.Hum"},
+            {kode: "17", nama: "Ustadz Muhammad Azka Maula Syakur, Lc"},
+            {kode: "18", nama: "Dr. Abdul Amin, Lc, MA"},
+            {kode: "19", nama: "Ustadz Muhamad Chaedar Rafiq, M.Ag"},
+            {kode: "20", nama: "Ustadz Angger Rian Fahreza, S.Pd"},
+            {kode: "21", nama: "Sayyidah Anisa Salsabila, S.Hum"},
+            {kode: "22", nama: "Sayyidah Ghita Fasya Azuar, S.Pd. Gr."},
+            {kode: "23", nama: "Sayyidah Nadya Elyana Pertiwi, S.Pd"},
+            {kode: "24", nama: "Sayyidah Eva Fauzia Rahmi M.Pd"},
+            {kode: "25", nama: "Sayyidah Alya Islahu"},
+            {kode: "26", nama: "Ustadz M. Fikri Izzul Haq"},
+            {kode: "27", nama: "Ustadz Muhammad Muchlis"},
+            {kode: "28", nama: "Ustadz Hilal Al Munawwar"}
+        ];
+
+        // 1. Tarik HANYA Data Jadwal saat aplikasi dibuka (berjalan di background)
         window.onload = async function() {
             try {
                 const response = await fetch(APPS_SCRIPT_URL + '?action=getInitData');
                 const data = await response.json();
-                
                 jadwalHariIni = data.jadwalHariIni || [];
-                dataGuruFull = data.guruData || []; 
-                
-                const datalist = document.getElementById('list-guru');
-                datalist.innerHTML = ''; 
-
-                if (dataGuruFull.length > 0) {
-                    dataGuruFull.forEach(guru => {
-                        let option = document.createElement('option');
-                        // Menyesuaikan pembacaan jika data berbentuk array maupun object
-
-                        let namaGuru = guru.nama || guru.Nama || guru[1] || guru;
-                        option.value = namaGuru; 
-                        datalist.appendChild(option);
-                    });
-                }
             } catch (e) {
-                console.error(e);
-                alert("Gagal memuat data dari server. Pastikan koneksi internet stabil.");
+                console.error("Gagal memuat jadwal dari server: ", e);
+                // Tidak perlu alert agar tidak mengganggu guru yang sedang mengetik nama
             }
         };
 
@@ -574,17 +618,15 @@
                 return;
             }
 
-            const guruMatch = dataGuruFull.find(g => {
-                let n = g.nama || g.Nama || g[1] || g;
-                return n.toLowerCase() === namaGuru.toLowerCase();
-            });
+            // Cari kode guru dari data hardcode
+            const guruMatch = dataGuruFull.find(g => g.nama.toLowerCase() === namaGuru.toLowerCase());
             
             if (!guruMatch) {
                 alert("Nama guru harus sesuai yang didaftarkan sistem! Silakan pilih nama dari daftar rekomendasi yang muncul saat Anda mengetik.");
                 return; 
             }
             
-            kodeGuruAktif = guruMatch.kode || guruMatch.Kode || guruMatch[0] || ""; 
+            kodeGuruAktif = guruMatch.kode; 
 
             document.getElementById('reader').classList.remove('hidden');
             document.getElementById('btn-scan').classList.add('hidden');
@@ -644,6 +686,7 @@
 
                     let scheduledKodeGuru = pelajaran.kodeGuru ? pelajaran.kodeGuru.toString() : "-";
                     
+                    // JIKA GURU PIKET YANG SCAN, DIA AKAN LANGSUNG DIIZINKAN TANPA PERINGATAN
                     if (kodeGuruAktif !== scheduledKodeGuru && kodeGuruAktif !== "PIKET") {
                         alert("Notifikasi: Guru tidak sesuai jadwal.");
                         warningDiv.classList.remove('hidden');
@@ -654,7 +697,7 @@
                         btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
                         btnHadir.style.backgroundColor = "var(--primary)";
                         
-                        // FITUR BARU: CARI JAM BERUNTUN DI KELAS YANG SAMA
+                        // CARI JAM BERUNTUN DI KELAS YANG SAMA
                         let currentIndex = jadwalHariIni.findIndex(j => j.jamKe == currentJam.jamKe);
                         let nextIndex = currentIndex + 1;
                         
@@ -670,7 +713,7 @@
                             let pelNext = nextJam.pelajaran[namaKelas];
                             let kGuruNext = pelNext && pelNext.kodeGuru ? pelNext.kodeGuru.toString() : "";
                             
-                            // Jika guru masih sama di jam berikutnya di kelas ini
+                            // Jika guru masih sama di jam berikutnya di kelas ini (Atau jika Piket yang melanjutkan)
                             if (kGuruNext === kodeGuruAktif && kodeGuruAktif !== "") {
                                 sesiLanjutan.push({
                                     jamKe: nextJam.jamKe,
@@ -748,7 +791,7 @@
                 return;
             }
 
-            // MEYIAPKAN DATA YANG AKAN DIKIRIM (Bisa 1 jam, bisa banyak jam)
+            // MEYIAPKAN DATA YANG AKAN DIKIRIM
             let listSesiKirim = [{
                 jamKe: dataScanAktif.jamKe,
                 kodeMapel: dataScanAktif.kodeMapel,
@@ -758,20 +801,18 @@
 
             // MUNCULKAN POPUP JIKA ADA JAM BERUNTUN
             if (sesiLanjutan.length > 0) {
-                // Buat teks daftar jam (Contoh: "Ke-5 (MTK), Ke-6 (MTK)")
                 let teksJam = sesiLanjutan.map(s => `Ke-${s.jamKe} (${s.kodeMapel})`).join(", ");
                 
-                // Tampilkan pesan konfirmasi persis seperti request Anda
                 let konfirmasi = confirm(`Jam pelajaran selanjutnya masih jam pelajaran ${teksJam} atas nama guru ${nama}, klik OK/Lanjut untuk otomatis menginput data yang sama.`);
                 
                 if (konfirmasi) {
-                    // Jika diklik OK, gabungkan data jam berikutnya ke dalam paket kiriman
                     listSesiKirim = listSesiKirim.concat(sesiLanjutan);
                 }
             }
 
+            // UBAH TOMBOL JADI LOADING
             const btnHadir = document.getElementById('btn-hadir');
-            btnHadir.innerText = "MENGIRIM...";
+            btnHadir.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg><span>MENGIRIM...</span>`;
             btnHadir.disabled = true;
 
             const file = fileInput.files[0];
@@ -808,10 +849,8 @@
                         tanggal: new Date().toLocaleDateString('id-ID'),
                         jamScan: new Date().toLocaleTimeString('id-ID').replace(/\./g, ':'),
                         
-                        // PAKET DATA GANDA DIKIRIM KE SERVER DISINI
                         sesiList: listSesiKirim,
                         
-                        // Fallback (jaga-jaga jika server butuh data satuan)
                         jamKe: dataScanAktif.jamKe,
                         kodeMapel: dataScanAktif.kodeMapel,
                         namaMapel: dataScanAktif.kodeMapel,
@@ -841,5 +880,11 @@
             reader.readAsDataURL(file);
         }
     </script>
+    <!-- Tambahan CSS untuk animasi loading berputar -->
+    <style>
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </body>
 </html>
