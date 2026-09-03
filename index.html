@@ -359,6 +359,10 @@
         .hidden {
             display: none !important;
         }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -384,9 +388,7 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                         <input list="list-guru" id="namaGuru" class="input-field" placeholder="Contoh: Ahmad...">
-                        <!-- Datalist di-hardcode agar super cepat tanpa loading -->
                         <datalist id="list-guru">
-                            <!-- GURU PIKET DITAMBAHKAN DI SINI -->
                             <option value="GURU PIKET">
                             <option value="KH. Ahmad Multazam">
                             <option value="KH. Ahmad Baehaki, Lc.">
@@ -557,9 +559,8 @@
         let html5QrCode = null;
         let sesiLanjutan = []; 
 
-        // Data Guru di-hardcode agar instan (diambil dari Spreadsheet DATA_GURU)
         const dataGuruFull = [
-            {kode: "PIKET", nama: "GURU PIKET"}, // <-- GURU PIKET DITAMBAHKAN DI SINI
+            {kode: "PIKET", nama: "GURU PIKET"},
             {kode: "1", nama: "KH. Ahmad Multazam"},
             {kode: "2", nama: "KH. Ahmad Baehaki, Lc."},
             {kode: "3", nama: "Ustadz. H. Syahroni, S.Pd.I"},
@@ -590,27 +591,27 @@
             {kode: "28", nama: "Ustadz Hilal Al Munawwar"}
         ];
 
-        // 1. Tarik HANYA Data Jadwal saat aplikasi dibuka (berjalan di background)
+        // 1. Tarik Data Jadwal dengan parameter anti-cache (?_t=timestamp)
         window.onload = async function() {
             try {
-                const response = await fetch(APPS_SCRIPT_URL + '?action=getInitData');
+                const cacheBuster = new Date().getTime();
+                const response = await fetch(APPS_SCRIPT_URL + '?action=getInitData&_t=' + cacheBuster);
                 const data = await response.json();
                 jadwalHariIni = data.jadwalHariIni || [];
             } catch (e) {
                 console.error("Gagal memuat jadwal dari server: ", e);
-                // Tidak perlu alert agar tidak mengganggu guru yang sedang mengetik nama
             }
         };
 
-        // Fungsi pembantu mengubah "07:30" menjadi format Waktu
+        // Fungsi parse jam dengan format HH:MM yang aman
         function parseTime(timeStr) {
             let now = new Date();
-            let parts = timeStr.split(':');
-            now.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+            let parts = timeStr.toString().split(':');
+            now.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
             return now;
         }
 
-        // 2. Mulai Kamera Scanner & VALIDASI NAMA
+        // 2. Mulai Kamera Scanner
         function startScanner() {
             const namaGuru = document.getElementById('namaGuru').value.trim();
             if(!namaGuru) {
@@ -618,7 +619,6 @@
                 return;
             }
 
-            // Cari kode guru dari data hardcode
             const guruMatch = dataGuruFull.find(g => g.nama.toLowerCase() === namaGuru.toLowerCase());
             
             if (!guruMatch) {
@@ -642,7 +642,7 @@
                         prosesHasilScan(decodedText);
                     });
                 },
-                (errorMessage) => { /* Abaikan error per frame */ }
+                (errorMessage) => { /* Abaikan error scan per frame */ }
             ).catch(err => {
                 alert("Tidak dapat membuka kamera. Pastikan izin kamera telah diberikan.");
                 document.getElementById('reader').classList.add('hidden');
@@ -650,24 +650,30 @@
             });
         }
 
-        // 3. Olah Hasil Scan QR & Pengecekan Jadwal
+        // 3. Olah Hasil Scan QR & Pengecekan Jadwal (+ Toleransi 2 Menit)
         function prosesHasilScan(decodedText) {
             let namaKelas = decodedText.replace('QR-KL-', '').trim();
             
             let now = new Date();
             let currentJam = null;
-            sesiLanjutan = []; // Kosongkan data sesi beruntun sebelumnya
+            sesiLanjutan = [];
 
             for (let j of jadwalHariIni) {
+                if (!j.mulai || !j.selesai) continue;
+
                 let start = parseTime(j.mulai);
                 let end = parseTime(j.selesai);
-                if (now >= start && now <= end) {
+                
+                // Tambahkan toleransi waktu 2 menit
+                let startToleransi = new Date(start.getTime() - 2 * 60000);
+                let endToleransi = new Date(end.getTime() + 2 * 60000);
+
+                if (now >= startToleransi && now <= endToleransi) {
                     currentJam = j;
                     break;
                 }
             }
 
-            // Tampilkan Layar Form Hasil
             document.getElementById('screen-scan').classList.add('hidden');
             document.getElementById('screen-result').classList.remove('hidden');
             document.getElementById('result-nama-guru').value = document.getElementById('namaGuru').value;
@@ -686,7 +692,6 @@
 
                     let scheduledKodeGuru = pelajaran.kodeGuru ? pelajaran.kodeGuru.toString() : "-";
                     
-                    // JIKA GURU PIKET YANG SCAN, DIA AKAN LANGSUNG DIIZINKAN TANPA PERINGATAN
                     if (kodeGuruAktif !== scheduledKodeGuru && kodeGuruAktif !== "PIKET") {
                         alert("Notifikasi: Guru tidak sesuai jadwal.");
                         warningDiv.classList.remove('hidden');
@@ -697,23 +702,20 @@
                         btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
                         btnHadir.style.backgroundColor = "var(--primary)";
                         
-                        // CARI JAM BERUNTUN DI KELAS YANG SAMA
                         let currentIndex = jadwalHariIni.findIndex(j => j.jamKe == currentJam.jamKe);
                         let nextIndex = currentIndex + 1;
                         
                         while(nextIndex < jadwalHariIni.length) {
                             let nextJam = jadwalHariIni[nextIndex];
                             
-                            // Lewati jika jam istirahat
                             if(nextJam.jamKe === "Istirahat/Lainnya" || !nextJam.jamKe) {
                                 nextIndex++; 
                                 continue;
                             }
                             
-                            let pelNext = nextJam.pelajaran[namaKelas];
+                            let pelNext = nextJam.pelajaran ? nextJam.pelajaran[namaKelas] : null;
                             let kGuruNext = pelNext && pelNext.kodeGuru ? pelNext.kodeGuru.toString() : "";
                             
-                            // Jika guru masih sama di jam berikutnya di kelas ini (Atau jika Piket yang melanjutkan)
                             if (kGuruNext === kodeGuruAktif && kodeGuruAktif !== "") {
                                 sesiLanjutan.push({
                                     jamKe: nextJam.jamKe,
@@ -723,7 +725,7 @@
                                 });
                                 nextIndex++;
                             } else {
-                                break; // Berhenti mencari jika guru sudah beda
+                                break;
                             }
                         }
                     }
@@ -791,18 +793,15 @@
                 return;
             }
 
-            // MEYIAPKAN DATA YANG AKAN DIKIRIM
             let listSesiKirim = [{
                 jamKe: dataScanAktif.jamKe,
                 kodeMapel: dataScanAktif.kodeMapel,
                 namaMapel: dataScanAktif.kodeMapel,
-                jamMulai: "" // Dikosongkan agar pakai jam real-time saat ini
+                jamMulai: "" 
             }];
 
-            // MUNCULKAN POPUP JIKA ADA JAM BERUNTUN
             if (sesiLanjutan.length > 0) {
                 let teksJam = sesiLanjutan.map(s => `Ke-${s.jamKe} (${s.kodeMapel})`).join(", ");
-                
                 let konfirmasi = confirm(`Jam pelajaran selanjutnya masih jam pelajaran ${teksJam} atas nama guru ${nama}, klik OK/Lanjut untuk otomatis menginput data yang sama.`);
                 
                 if (konfirmasi) {
@@ -810,7 +809,6 @@
                 }
             }
 
-            // UBAH TOMBOL JADI LOADING
             const btnHadir = document.getElementById('btn-hadir');
             btnHadir.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg><span>MENGIRIM...</span>`;
             btnHadir.disabled = true;
@@ -841,16 +839,19 @@
 
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
                     
+                    const now = new Date();
+                    const tglFormatted = now.getDate().toString().padStart(2, '0') + '/' + 
+                                         (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                                         now.getFullYear();
+
                     const payload = {
                         namaGuru: nama,
                         kodeGuru: kodeGuruAktif,
                         kodeKelas: dataScanAktif.kodeKelas,
                         namaKelas: dataScanAktif.namaKelas,
-                        tanggal: new Date().toLocaleDateString('id-ID'),
-                        jamScan: new Date().toLocaleTimeString('id-ID').replace(/\./g, ':'),
-                        
+                        tanggal: tglFormatted,
+                        jamScan: now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0'),
                         sesiList: listSesiKirim,
-                        
                         jamKe: dataScanAktif.jamKe,
                         kodeMapel: dataScanAktif.kodeMapel,
                         namaMapel: dataScanAktif.kodeMapel,
@@ -880,11 +881,5 @@
             reader.readAsDataURL(file);
         }
     </script>
-    <!-- Tambahan CSS untuk animasi loading berputar -->
-    <style>
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </body>
 </html>
