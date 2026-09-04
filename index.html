@@ -606,7 +606,7 @@
             {kode: "28", nama: "Ustadz Hilal Al Munawwar"}
         ];
 
-        // 1. Tarik Data Jadwal dengan parameter anti-cache (?_t=timestamp)
+        // 1. Tarik Data Jadwal dengan parameter anti-cache
         window.onload = async function() {
             try {
                 const cacheBuster = new Date().getTime();
@@ -618,7 +618,6 @@
             }
         };
 
-        // Fungsi parse jam dengan format HH:MM yang aman
         function parseTime(timeStr) {
             let now = new Date();
             let parts = timeStr.toString().split(':');
@@ -626,8 +625,8 @@
             return now;
         }
 
-        // 2. Mulai Kamera Scanner
-        function startScanner() {
+        // 2. Mulai Kamera Scanner & Pembersihan Instance Kamera
+        async function startScanner() {
             const namaGuru = document.getElementById('namaGuru').value.trim();
             if(!namaGuru) {
                 alert("Pilih / isi nama guru terlebih dahulu!");
@@ -635,31 +634,50 @@
             }
 
             const guruMatch = dataGuruFull.find(g => g.nama.toLowerCase() === namaGuru.toLowerCase());
-            
             if (!guruMatch) {
-                alert("Nama guru harus sesuai yang didaftarkan sistem! Silakan pilih nama dari daftar rekomendasi yang muncul saat Anda mengetik.");
+                alert("Nama guru harus sesuai yang didaftarkan sistem! Silakan pilih nama dari daftar rekomendasi.");
                 return; 
             }
             
             kodeGuruAktif = guruMatch.kode; 
 
+            // REFRESH JADWAL REAL-TIME DARI SERVER SEBELUM SCAN
+            try {
+                const cacheBuster = new Date().getTime();
+                const response = await fetch(APPS_SCRIPT_URL + '?action=getInitData&_t=' + cacheBuster);
+                const data = await response.json();
+                jadwalHariIni = data.jadwalHariIni || [];
+            } catch(e) {}
+
             document.getElementById('reader').classList.remove('hidden');
             document.getElementById('btn-scan').classList.add('hidden');
 
+            // Hentikan & bersihkan instance kamera jika sebelumnya belum tertutup sempurna
+            if (html5QrCode) {
+                try {
+                    await html5QrCode.clear();
+                } catch(e) {}
+            }
+
             html5QrCode = new Html5Qrcode("reader");
+
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: 220, height: 220 } },
-                (decodedText, decodedResult) => {
-                    html5QrCode.stop().then(() => {
-                        document.getElementById('reader').classList.add('hidden');
-                        document.getElementById('btn-scan').classList.remove('hidden');
-                        prosesHasilScan(decodedText);
-                    });
+                async (decodedText, decodedResult) => {
+                    // STOP & CLEAR KAMERA BEGITU QR TERBACA
+                    try {
+                        await html5QrCode.stop();
+                        await html5QrCode.clear();
+                    } catch(e) {}
+
+                    document.getElementById('reader').classList.add('hidden');
+                    document.getElementById('btn-scan').classList.remove('hidden');
+                    prosesHasilScan(decodedText);
                 },
-                (errorMessage) => { /* Abaikan error scan per frame */ }
+                (errorMessage) => { }
             ).catch(err => {
-                alert("Tidak dapat membuka kamera. Pastikan izin kamera telah diberikan.");
+                alert("Tidak dapat membuka kamera. Pastikan izin kamera aktif & tidak sedang digunakan aplikasi lain.");
                 document.getElementById('reader').classList.add('hidden');
                 document.getElementById('btn-scan').classList.remove('hidden');
             });
@@ -668,7 +686,6 @@
         // 3. Olah Hasil Scan QR & Pengecekan Jadwal (+ Toleransi 2 Menit)
         function prosesHasilScan(decodedText) {
             let namaKelas = decodedText.replace('QR-KL-', '').trim();
-            
             let now = new Date();
             let currentJam = null;
             sesiLanjutan = [];
@@ -679,7 +696,7 @@
                 let start = parseTime(j.mulai);
                 let end = parseTime(j.selesai);
                 
-                // Tambahkan toleransi waktu 2 menit
+                // Toleransi 2 menit sebelum & sesudah jam KBM
                 let startToleransi = new Date(start.getTime() - 2 * 60000);
                 let endToleransi = new Date(end.getTime() + 2 * 60000);
 
@@ -779,11 +796,17 @@
             }
         }
 
-        // Reset & Kembali ke Layar Awal
-        function resetForm() {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop();
+        // Reset & Kembali ke Layar Awal (Satu-satunya Penangan Pembersihan Kamera jika Batal)
+        async function resetForm() {
+            if (html5QrCode) {
+                try {
+                    if (html5QrCode.isScanning) {
+                        await html5QrCode.stop();
+                    }
+                    await html5QrCode.clear();
+                } catch(e) {}
             }
+
             document.getElementById('screen-result').classList.add('hidden');
             document.getElementById('screen-scan').classList.remove('hidden');
             document.getElementById('reader').classList.add('hidden');
