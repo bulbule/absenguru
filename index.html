@@ -318,6 +318,38 @@
             line-height: 1.4;
         }
 
+        .info-lanjut {
+            background-color: var(--accent-blue);
+            color: var(--accent-blue-text);
+            border: 1.5px solid #BAE6FD;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .textarea-field {
+            width: 100%;
+            padding: 12px 14px;
+            background-color: #FFFFFF;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            outline: none;
+            resize: vertical;
+        }
+
+        .textarea-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 43, 102, 0.1);
+        }
+
+        .opsional { font-weight: 500; color: var(--text-sub); }
+
         /* Selfie Photo Box */
         .photo-upload-box {
             position: relative;
@@ -414,7 +446,7 @@
                             <option value="Sayyidah Nurul Maudhunah Almunawaroh, S.Pd">
                             <option value="Sayyidah Siti Nuraini Rosidin, S.Hum.">
                             <option value="Ustadz Ahmad Gojali, S.I.Kom">
-                            <option value="Sayyidah Sausan Thahira">
+                            <option value="Sayyidah Hilma Rohmaniah, S.Ag">
                             <option value="Sayyidah Melati">
                             <option value="Sayyidah Syarifah Afifah, S.Hum">
                             <option value="Ustadz Muhammad Azka Maula Syakur, Lc">
@@ -428,6 +460,7 @@
                             <option value="Sayyidah Alya Islahu">
                             <option value="Ustadz M. Fikri Izzul Haq">
                             <option value="Ustadz Muhammad Muchlis">
+                            <option value="Sayyidah Risda Mursyida, M.Hum">
                             <option value="Ustadz Hilal Al Munawwar">
                         </datalist>
                     </div>
@@ -532,6 +565,19 @@
                 <span><b>Peringatan:</b> Anda tidak terdaftar pada jadwal ini. Klik tombol di bawah jika Anda adalah Guru Pengganti.</span>
             </div>
 
+            <!-- Info JP lanjutan otomatis -->
+            <div id="info-lanjut" class="info-lanjut hidden"></div>
+
+            <!-- Materi & Tugas (opsional) -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="label-title" style="color: var(--text-sub);">Materi yang Diajarkan <span class="opsional">(opsional)</span></label>
+                <textarea id="materi" class="textarea-field" rows="2" maxlength="300" placeholder="Contoh: Bab 3 - Persamaan Linear"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="label-title" style="color: var(--text-sub);">Tugas untuk Santri <span class="opsional">(opsional)</span></label>
+                <textarea id="tugas" class="textarea-field" rows="2" maxlength="300" placeholder="Contoh: Kerjakan latihan hal. 45 no. 1-5"></textarea>
+            </div>
+
             <!-- Selfie Photo Section -->
             <div class="form-group" style="margin-bottom: 20px;">
                 <label class="label-title" style="color: var(--text-sub);">Ambil Foto Selfie di Kelas</label>
@@ -560,7 +606,7 @@
         </div>
 
         <!-- Tag Versi Aplikasi di Tengah Paling Bawah -->
-        <div class="version-tag">V.9426</div>
+        <div class="version-tag">V.9427</div>
 
     </div>
 
@@ -589,7 +635,7 @@
             {kode: "11", nama: "Sayyidah Nurul Maudhunah Almunawaroh, S.Pd"},
             {kode: "12", nama: "Sayyidah Siti Nuraini Rosidin, S.Hum."},
             {kode: "13", nama: "Ustadz Ahmad Gojali, S.I.Kom"},
-            {kode: "14", nama: "Sayyidah Sausan Thahira"},
+            {kode: "29", nama: "Sayyidah Hilma Rohmaniah, S.Ag"},
             {kode: "15", nama: "Sayyidah Melati"},
             {kode: "16", nama: "Sayyidah Syarifah Afifah, S.Hum"},
             {kode: "17", nama: "Ustadz Muhammad Azka Maula Syakur, Lc"},
@@ -603,6 +649,7 @@
             {kode: "25", nama: "Sayyidah Alya Islahu"},
             {kode: "26", nama: "Ustadz M. Fikri Izzul Haq"},
             {kode: "27", nama: "Ustadz Muhammad Muchlis"},
+            {kode: "30", nama: "Sayyidah Risda Mursyida, M.Hum"},
             {kode: "28", nama: "Ustadz Hilal Al Munawwar"}
         ];
 
@@ -734,21 +781,19 @@
                         btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
                         btnHadir.style.backgroundColor = "var(--primary)";
                         
+                    }
+
+                    // JP lanjutan: JP berikutnya di kelas yang sama yang jadwalnya dipegang guru yang sama
+                    // dengan JP ini. Berlaku untuk guru jadwal, guru pengganti, maupun guru piket.
+                    if (scheduledKodeGuru !== "" && scheduledKodeGuru !== "-") {
                         let currentIndex = jadwalHariIni.findIndex(j => j.jamKe == currentJam.jamKe);
                         let nextIndex = currentIndex + 1;
-                        
-                        while(nextIndex < jadwalHariIni.length) {
+                        while (nextIndex < jadwalHariIni.length) {
                             let nextJam = jadwalHariIni[nextIndex];
-                            
-                            if(nextJam.jamKe === "Istirahat/Lainnya" || !nextJam.jamKe) {
-                                nextIndex++; 
-                                continue;
-                            }
-                            
+                            if (nextJam.jamKe === "Istirahat/Lainnya" || !nextJam.jamKe) { nextIndex++; continue; }
                             let pelNext = nextJam.pelajaran ? nextJam.pelajaran[namaKelas] : null;
                             let kGuruNext = pelNext && pelNext.kodeGuru ? pelNext.kodeGuru.toString() : "";
-                            
-                            if (kGuruNext === kodeGuruAktif && kodeGuruAktif !== "") {
+                            if (kGuruNext === scheduledKodeGuru && pelNext.kodeMapel) {
                                 sesiLanjutan.push({
                                     jamKe: nextJam.jamKe,
                                     kodeMapel: pelNext.kodeMapel,
@@ -760,6 +805,14 @@
                                 break;
                             }
                         }
+                    }
+
+                    const infoLanjut = document.getElementById('info-lanjut');
+                    if (sesiLanjutan.length > 0) {
+                        infoLanjut.innerText = 'Jam pelajaran berikutnya (' + sesiLanjutan.map(s => 'Ke-' + s.jamKe + ' ' + s.kodeMapel).join(', ') + ') otomatis ikut tercatat hadir. Tidak perlu scan lagi.';
+                        infoLanjut.classList.remove('hidden');
+                    } else {
+                        infoLanjut.classList.add('hidden');
                     }
 
                     dataScanAktif = {
@@ -813,6 +866,9 @@
             document.getElementById('btn-scan').classList.remove('hidden');
             document.getElementById('selfie-preview').src = 'https://via.placeholder.com/400x220?text=Klik+untuk+ambil+foto+selfie';
             document.getElementById('fotoSelfie').value = '';
+            document.getElementById('materi').value = '';
+            document.getElementById('tugas').value = '';
+            document.getElementById('info-lanjut').classList.add('hidden');
             
             document.getElementById('warning-jadwal').classList.add('hidden');
             const btnHadir = document.getElementById('btn-hadir');
@@ -838,13 +894,9 @@
                 jamMulai: "" 
             }];
 
+            // JP lanjutan otomatis ikut terkirim (tanpa konfirmasi)
             if (sesiLanjutan.length > 0) {
-                let teksJam = sesiLanjutan.map(s => `Ke-${s.jamKe} (${s.kodeMapel})`).join(", ");
-                let konfirmasi = confirm(`Jam pelajaran selanjutnya masih jam pelajaran ${teksJam} atas nama guru ${nama}, klik OK/Lanjut untuk otomatis menginput data yang sama.`);
-                
-                if (konfirmasi) {
-                    listSesiKirim = listSesiKirim.concat(sesiLanjutan);
-                }
+                listSesiKirim = listSesiKirim.concat(sesiLanjutan);
             }
 
             const btnHadir = document.getElementById('btn-hadir');
@@ -893,6 +945,8 @@
                         jamKe: dataScanAktif.jamKe,
                         kodeMapel: dataScanAktif.kodeMapel,
                         namaMapel: dataScanAktif.kodeMapel,
+                        materi: document.getElementById('materi').value.trim(),
+                        tugas: document.getElementById('tugas').value.trim(),
                         fotoBase64: compressedBase64 
                     };
                     
@@ -903,7 +957,10 @@
                         });
                         const result = await response.json();
                         if(result.status === 'success') {
-                            alert("Absen Berhasil Disimpan!");
+                            alert("Absen Berhasil Disimpan!" + (result.jumlahJP > 1 ? " (" + result.jumlahJP + " jam pelajaran tercatat)" : ""));
+                            location.reload();
+                        } else if(result.status === 'duplicate') {
+                            alert(result.message);
                             location.reload();
                         } else {
                             alert("Gagal menyimpan absen. Silakan coba lagi.");
