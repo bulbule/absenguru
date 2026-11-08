@@ -533,6 +533,15 @@
                 <span><b>Peringatan:</b> Anda tidak terdaftar pada jadwal ini. Klik tombol di bawah jika Anda adalah Guru Pengganti.</span>
             </div>
 
+            <!-- PENGINGAT 2 JP: wajib absen lagi di jam berikutnya -->
+            <div id="warning-jp2" class="warning-box hidden" style="background-color:#FEE2E2; color:#991B1B; border-color:#FCA5A5;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span id="warning-jp2-text"></span>
+            </div>
+
             <!-- Selfie Photo Section -->
             <div class="form-group" style="margin-bottom: 20px;">
                 <label class="label-title" style="color: var(--text-sub);">Ambil Foto Selfie di Kelas</label>
@@ -561,7 +570,7 @@
         </div>
 
         <!-- Tag Versi Aplikasi di Tengah Paling Bawah -->
-        <div class="version-tag">V.9426</div>
+        <div class="version-tag">V.9426-b</div>
 
     </div>
 
@@ -764,6 +773,16 @@
                         }
                     }
 
+                    const warnJp2 = document.getElementById('warning-jp2');
+                    if (sesiLanjutan.length > 0) {
+                        document.getElementById('warning-jp2-text').innerHTML =
+                            '<b>Jangan lupa absen lagi di jam ke-' + sesiLanjutan.map(s => s.jamKe).join(' dan ke-') +
+                            '!</b> Jam berikutnya di kelas ini juga jadwal Anda. Scan QR kembali saat jam tersebut dimulai.';
+                        warnJp2.classList.remove('hidden');
+                    } else {
+                        warnJp2.classList.add('hidden');
+                    }
+
                     dataScanAktif = {
                         kodeKelas: decodedText,
                         namaKelas: namaKelas,
@@ -817,6 +836,7 @@
             document.getElementById('fotoSelfie').value = '';
             
             document.getElementById('warning-jadwal').classList.add('hidden');
+            document.getElementById('warning-jp2').classList.add('hidden');
             const btnHadir = document.getElementById('btn-hadir');
             btnHadir.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg><span>HADIR</span>`;
             btnHadir.style.backgroundColor = "var(--primary)";
@@ -840,14 +860,10 @@
                 jamMulai: "" 
             }];
 
-            if (sesiLanjutan.length > 0) {
-                let teksJam = sesiLanjutan.map(s => `Ke-${s.jamKe} (${s.kodeMapel})`).join(", ");
-                let konfirmasi = confirm(`Jam pelajaran selanjutnya masih jam pelajaran ${teksJam} atas nama guru ${nama}, klik OK/Lanjut untuk otomatis menginput data yang sama.`);
-                
-                if (konfirmasi) {
-                    listSesiKirim = listSesiKirim.concat(sesiLanjutan);
-                }
-            }
+            // Versi pengingat: JP berikutnya TIDAK diinput otomatis, guru diingatkan untuk absen lagi
+            const pengingatJp2 = sesiLanjutan.length > 0
+                ? "\n\nPENGINGAT: Jangan lupa absen lagi di jam ke-" + sesiLanjutan.map(s => s.jamKe).join(" dan ke-") + " (scan QR kembali saat jam tersebut dimulai)."
+                : "";
 
             const btnHadir = document.getElementById('btn-hadir');
             btnHadir.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg><span>MENGIRIM...</span>`;
@@ -905,7 +921,7 @@
                         });
                         const result = await response.json();
                         if(result.status === 'success') {
-                            alert("Absen Berhasil Disimpan!");
+                            alert("Absen Berhasil Disimpan!" + pengingatJp2);
                             location.reload();
                         } else {
                             alert("Gagal menyimpan absen. Silakan coba lagi.");
