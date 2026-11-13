@@ -1,0 +1,17 @@
+{
+  "name": "Scan Absen Guru MBS",
+  "short_name": "Scan Absen",
+  "description": "Scan absen guru Malika Boarding School",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b4fa8",
+  "theme_color": "#0b4fa8",
+  "icons": [
+    { "src": "icons/scan-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/scan-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/scan-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/scan-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
